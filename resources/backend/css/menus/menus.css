@@ -1,0 +1,26 @@
+#result {
+	display:none;
+	width:100%;
+	max-height:300px;
+	position:absolute;
+	top:100%;
+	background:#fff;
+	border:1px solid #ddd;
+	overflow-x:hidden;
+	overflow-y: auto;
+	z-index:2;
+}
+#result .link-item {
+	padding:5px;
+	cursor:pointer;
+}
+#result .link-item+.link-item{
+	border-top:1px solid #efefef;
+}
+#result .link-item:hover {
+	padding:5px;
+	background-color:#eee;
+}
+#result .link-item strong {
+	display:block;
+}
