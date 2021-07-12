@@ -44,7 +44,7 @@ $direction = config('layout.extras.user.offcanvas.direction', 'right');
     {{-- Button --}}
     <div class="navi-footer px-8 py-5 d-flex flex-wrap">
       <a href="#" data-toggle="modal" data-target="#modalChangePassword" class="btn btn-light-info font-weight-bold m-2">Ubah Password</a>
-      <a href="{{ route('backend.users.edit', Auth::id()) }}" class="btn btn-light-warning font-weight-bold m-2">Edit Profile</a>
+      <a href="{{ route('users.edit', Auth::id()) }}" class="btn btn-light-warning font-weight-bold m-2">Edit Profile</a>
       <a href="/logout" class="btn btn-light-primary font-weight-bold m-2">Keluar</a>
     </div>
   </div>

@@ -38,9 +38,9 @@ class UsersController extends Controller
                   <i class="la la-file-text-o"></i>
                   </button>
                   <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
-                      <a class="dropdown-item" href="users/' . $row->id . '/edit">Edit</a>
+                      <a class="dropdown-item" href="users/' . $row->id . '/edit">Ubah</a>
                       <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalReset" data-id="' . $row->id . '">Reset Password</a>
-                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalDelete" data-id="' . $row->id . '">Delete</a>
+                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalDelete" data-id="' . $row->id . '">Hapus</a>
                   </div>
               </div>
           ';

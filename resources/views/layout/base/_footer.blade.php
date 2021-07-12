@@ -32,7 +32,7 @@
           </div>
         </div>
       </div>
-      <form id="formChangePassword" method="POST" action="{{ route('backend.users.changepassword') }}">
+      <form id="formChangePassword" method="POST" action="{{ route('users.changepassword') }}">
         <div class="modal-body">
           @csrf
           <div class="form-group">

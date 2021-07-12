@@ -70,7 +70,7 @@ class Fileupload
     }
   }
 
-  public static function uploadFilePublic($file, $location = 'storage', $old_file = NULL, $fileName = NULL)
+  public static function uploadFilePublic($file, $location = 'storage', $fileName = NULL)
   {
     if (request()->hasFile($file)) {
       if ($location == 'storage') {
@@ -85,19 +85,22 @@ class Fileupload
         Image::make($file)->save($filePath . '/' . $fileName);
         Storage::putFile($filePath, $fileName);
       }
-    } else {
-      $filePath = public_path('document');
-      $file = request()->file($file);
-      $ext = $file->getClientOriginalExtension();
-      $fileName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '_' . Carbon::now()->timestamp) . '.' . $ext;
-
-      if (!File::isDirectory("$filePath")) {
-        File::makeDirectory("$filePath", 0777, true);
+      else{
+        $filePath = 'template';
+        $file = request()->file($file);
+        $ext = $file->getClientOriginalExtension();
+        $fileName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '_' . Carbon::now()->timestamp) . '.' . $ext;
+        if (!File::isDirectory("$filePath")) {
+          File::makeDirectory("$filePath", 0777, true);
+        }
+        Storage::disk('public_upload')->putFileAs($filePath, $file, $fileName);
       }
-      Storage::disk('public_upload')->putFile($filePath, $file);
-      Storage::disk('public_upload')->delete($old_file);
-
     }
     return $fileName;
+  }
+
+  public static function deleteFilePublic($fileName){
+    $filePath = 'template';
+    Storage::disk('public_upload')->delete($filePath.'/'.$fileName);
   }
 }

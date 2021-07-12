@@ -12,7 +12,7 @@
           </h3>
         </div>
         <!--begin::Form-->
-        <form id="formStore" action="{{ route('backend.users.store') }}">
+        <form id="formStore" action="{{ route('users.store') }}">
           @csrf
           <div class="card-body">
             <div class="form-group" style="display:none;">
@@ -123,7 +123,7 @@
             if (response.status === "success") {
               toastr.success(response.message, 'Success !');
               setTimeout(function () {
-                window.location.href = "{{route('backend.users.index')}}"
+                window.location.href = "{{route('users.index')}}"
               }, 1000);
             } else {
               $("[role='alert']").parent().removeAttr("style");

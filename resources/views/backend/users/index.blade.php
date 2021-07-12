@@ -13,7 +13,7 @@
     </div>
     <div class="card-toolbar">
       <!--begin::Button-->
-      <a href="{{ route('backend.users.create') }}" class="btn btn-primary font-weight-bolder">
+      <a href="{{ route('users.create') }}" class="btn btn-primary font-weight-bolder">
         <span class="svg-icon svg-icon-md">
           <!--begin::Svg Icon | path:assets/media/svg/icons/Design/Flatten.svg-->
           <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
@@ -59,7 +59,7 @@
           <i aria-hidden="true" class="ki ki-close"></i>
         </button>
       </div>
-      <form id="formReset" method="POST" action="{{ route('backend.users.resetpassword') }}">
+      <form id="formReset" method="POST" action="{{ route('users.resetpassword') }}">
         <div class="modal-body">
           @csrf
           <input type="hidden" name="id"></a>
@@ -120,7 +120,7 @@
         order: [[1, 'desc']],
         lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         pageLength: 10,
-        ajax: "{{ route('backend.users.index') }}",
+        ajax: "{{ route('users.index') }}",
         columns: [
             {data: 'image', name: 'image'},
             {data: 'name', name: 'name'},
@@ -173,7 +173,7 @@
 
     $('#modalDelete').on('show.bs.modal', function (event) {
       let id = $(event.relatedTarget).data('id');
-      $(this).find('.modal-body').find('a[name="id"]').attr('href', '{{ route("backend.users.index") }}/'+ id);
+      $(this).find('.modal-body').find('a[name="id"]').attr('href', '{{ route("users.index") }}/'+ id);
     });
 
     $('#modalDelete').on('hidden.bs.modal', function (event) {

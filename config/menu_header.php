@@ -6,13 +6,13 @@ return [
     [
       'title' => 'Users',
       'root' => true,
-      'page' => '/backend/users',
+      'page' => 'users',
       'new-tab' => false,
     ],
     [
       'title' => 'Template',
       'root' => true,
-      'page' => '/backend/templates',
+      'page' => 'templates',
       'new-tab' => false,
     ],
     // [

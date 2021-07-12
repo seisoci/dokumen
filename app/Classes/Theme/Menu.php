@@ -72,7 +72,7 @@ class Menu
         $item_class .= ' menu-item-active';
       }
 
-      if (request()->segment(2) == str_replace("/backend/", '', $item['page'])) {
+      if (request()->segment(1) == $item['page']) {
         $item_class .= ' menu-item-active';
       }
 
@@ -278,7 +278,7 @@ class Menu
         $item_class .= ' menu-item-icon-only';
       }
 
-      if (request()->segment(2) == str_replace("/backend/", '', $item['page'])) {
+      if (request()->segment(1) == $item['page']) {
         $item_class .= ' menu-item-active';
       }
 

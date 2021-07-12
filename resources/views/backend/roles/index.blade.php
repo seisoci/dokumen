@@ -85,7 +85,7 @@
       </div>
       <!--end::Dropdown-->
       <!--begin::Button-->
-      {{-- <a href="{{ route('backend.roles.create') }}" class="btn btn-primary font-weight-bolder">
+      {{-- <a href="{{ route('roles.create') }}" class="btn btn-primary font-weight-bolder">
       <span class="svg-icon svg-icon-md">
         <!--begin::Svg Icon | path:assets/media/svg/icons/Design/Flatten.svg-->
         <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
@@ -160,7 +160,7 @@
         order: [[1, 'desc']],
         lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
         pageLength: 10,
-        ajax: "{{ route('backend.roles.index') }}",
+        ajax: "{{ route('roles.index') }}",
         buttons: ["print", "copyHtml5", "excelHtml5", "csvHtml5", "pdfHtml5"],
         columns: [
             {data: 'name', name: 'name'},
