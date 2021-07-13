@@ -123,7 +123,11 @@
             if (response.status === "success") {
               toastr.success(response.message, 'Success !');
               setTimeout(function () {
-                window.location.href = "{{route('users.index')}}"
+                if (response.redirect === "" || response.redirect === "reload") {
+                  location.reload();
+                } else {
+                  location.href = response.redirect;
+                }
               }, 1000);
             } else {
               $("[role='alert']").parent().removeAttr("style");

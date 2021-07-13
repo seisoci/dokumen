@@ -37,7 +37,7 @@ class TemplateController extends Controller
                   <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
                       <a class="dropdown-item" href="templates/' . $row->id . '">Atur Konfigurasi</a>
                       <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalEdit" data-id="' . $row->id . '"  data-name="' . $row->name . '">Ubah</a>
-                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalDelete" data-id="' . $row->id . '">Hapus</a>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalDelete" data-id="' . $row->id . '">Hapus</a>
                   </div>
               </div>
           ';
@@ -73,24 +73,31 @@ class TemplateController extends Controller
 
   public function show($id)
   {
-    $config['page_title'] = "Atur Konfigurasi Template";
-    $config['page_description'] = "Atur Konfigurasi Template";
-    $config['form_title'] = "Tambah Field";
-    $page_breadcrumbs = [
-      ['page' => '/templates', 'title' => "List Template"],
-      ['page' => '#', 'title' => "Atur Konfigurasi Template"],
-    ];
+    $validator = Validator::make(['id' => $id], [
+      'id' => 'required|integer',
+    ]);
+    if ($validator->passes()) {
+      $config['page_title'] = "Atur Konfigurasi Template";
+      $config['page_description'] = "Atur Konfigurasi Template";
+      $config['form_title'] = "Tambah Field";
+      $page_breadcrumbs = [
+        ['page' => '/templates', 'title' => "List Template"],
+        ['page' => '#', 'title' => "Atur Konfigurasi Template"],
+      ];
 
-    $data = TemplateForm::where('template_id', $id)
-      ->whereIn('tag', ['table'])
-      ->get();
+      $data = TemplateForm::where('template_id', $id)
+        ->whereIn('tag', ['table'])
+        ->get();
 
-    $tree = TemplateForm::with('children')
-      ->where('template_id', $id)
-      ->whereNull('parent_id')
-      ->orderBy('sort_order', 'asc')
-      ->get();
-    return view('backend.templates.show', compact('config',  'page_breadcrumbs', 'id', 'data', 'tree'));
+      $tree = TemplateForm::with('children')
+        ->where('template_id', $id)
+        ->whereNull('parent_id')
+        ->orderBy('sort_order', 'asc')
+        ->get();
+      return view('backend.templates.show', compact('config', 'page_breadcrumbs', 'id', 'data', 'tree'));
+    } else {
+      return abort(404, 'Forbidden');
+    }
   }
 
   public function update(Request $request, $id)

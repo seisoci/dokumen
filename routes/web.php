@@ -36,5 +36,6 @@ Route::middleware('auth:web')->group(function () {
   });
   Route::resource('templates', TemplateController::class);
   Route::resource('documents', DocumentController::class);
-  Route::resource('tempalateforms', TemplateFormController::class);
+  Route::post('templateforms/{id}/changehierarchy', [TemplateFormController::class, 'change_hierarchy'])->name('change_hierarchy');
+  Route::resource('templateforms', TemplateFormController::class);
 });

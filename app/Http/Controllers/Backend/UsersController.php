@@ -220,7 +220,7 @@ class UsersController extends Controller
   {
     $response = response()->json([
       'status' => 'failed',
-      'message' => 'Data tidak bisa dihapus',
+      'message' => 'Gagal menghapus data',
     ]);
     $data = User::findOrFail($id);
     File::delete(["images/original/$data->image", "images/thumbnail/$data->image"]);
