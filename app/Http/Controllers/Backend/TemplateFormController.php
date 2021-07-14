@@ -48,7 +48,7 @@ class TemplateFormController extends Controller
           'type' => $request->input('type'),
           'name' => $request->input('name'),
           'label' => $request->input('label'),
-          'multiple' => $request->input('multiple') ?? '0',
+          'multiple' => $request->input('tag') == 'checkbox' ? $request->input('multiple') : '0',
           'sort_order' => $max += 1,
           'is_column_table' => $request->input('is_column_table') ?? '0',
         ]);
@@ -58,6 +58,66 @@ class TemplateFormController extends Controller
           foreach ($items['value'] as $key => $item):
             TemplateFormOption::create([
               'template_form_id' => $templateForm->id,
+              'option_text' => $items['text'][$key],
+              'option_value' => $item,
+              'option_selected' => $items['selected'][$key] ?? 0
+            ]);
+          endforeach;
+        }
+        DB::commit();
+
+        $response = response()->json([
+          'status' => 'success',
+          'message' => 'Data has been saved',
+          'redirect' => 'reload',
+        ]);
+      } catch (\Throwable $throw) {
+        DB::rollBack();
+        $response = $throw;
+      }
+    } else {
+      $response = response()->json(['error' => $validator->errors()->all()]);
+    }
+    return $response;
+  }
+
+  public function update(Request $request, $id)
+  {
+    $validator = Validator::make($request->all(), [
+      'id' => 'required|integer',
+      'template_id' => 'required|integer',
+      'parent_id' => 'nullable|integer',
+      'tag' => 'required',
+      'type' => 'required',
+      'name' => 'nullable',
+      'label' => 'required|string',
+      'is_column_table' => 'between:0,1'
+    ]);
+
+    if ($validator->passes()) {
+      try {
+        DB::beginTransaction();
+        $items['value'] = $request->input('formoption.value');
+        $items['text'] = $request->input('formoption.text');
+        $items['selected'] = $request->input('formoption.selected');
+
+        $data = TemplateForm::findOrFail($request->input('id'));
+        $data->selectoption()->delete();
+        $data->update([
+          'parent_id' => $request->input('parent_id'),
+          'tag' => $request->input('tag'),
+          'type' => $request->input('type'),
+          'name' => $request->input('name'),
+          'label' => $request->input('label'),
+          'multiple' => $request->input('tag') == 'checkbox' ? $request->input('multiple') : '0',
+          'is_column_table' => $request->input('is_column_table') ?? '0',
+        ]);
+
+        $type = ['select', 'checkbox', 'radio'];
+        if (in_array($request->input('tag'), $type)) {
+          foreach ($items['value'] as $key => $item):
+            TemplateFormOption::create([
+              'template_form_id' => $data->id,
               'option_text' => $items['text'][$key],
               'option_value' => $item,
               'option_selected' => $items['selected'][$key] ?? 0
@@ -116,34 +176,18 @@ class TemplateFormController extends Controller
     return $response;
   }
 
-  public function show(TemplateForm $templateForm)
-  {
-    //
-  }
-
-  public function edit(TemplateForm $templateForm)
-  {
-    //
-  }
-
-  public function update(Request $request, TemplateForm $templateForm)
-  {
-    //
-  }
-
   public function destroy($id)
   {
     DB::beginTransaction();
     try {
       $dataDelete = TemplateForm::findOrFail($id);
       $templateId = $dataDelete->template_id;
-      if($templateId){
-        TemplateForm::where('parent_id', $templateId)->delete();
-      }
+      TemplateForm::where('parent_id', $dataDelete->id)->delete();
+
       if ($dataDelete->delete()) {
         $data = TemplateForm::with('children')
           ->where('template_id', $templateId)
-          ->orderBy('sort_order','asc')
+          ->orderBy('sort_order', 'asc')
           ->get();
         $noParent = 1;
         foreach ($data as $item):
@@ -165,7 +209,7 @@ class TemplateFormController extends Controller
       $response = response()->json([
         'status' => 'success',
         'message' => 'Data berhasil dihapus',
-        'redirect' => 'reload'
+        'redirect' => "/templates/$templateId"
       ]);
     } catch (\Exception $e) {
       DB::rollback();

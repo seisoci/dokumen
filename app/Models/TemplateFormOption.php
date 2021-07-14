@@ -21,4 +21,8 @@ class TemplateFormOption extends Model
   {
     return $date->format('Y-m-d H:i');
   }
+
+  public function selectoption(){
+    return $this->hasMany(TemplateForm::class, 'template_form_id');
+  }
 }

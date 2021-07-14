@@ -99,53 +99,70 @@
           </div>
         </div>
         <div class="col-md-6">
-          <form id="formStore" action="{{ route('templateforms.store') }}" autocomplete="off">
-            @csrf
+          <form id="formUpdate" action="{{ route('templateforms.update', Request::segment(3)) }}" autocomplete="off">
+            @method('PUT')
             <div class="card card-table">
               <div class="card-header">
                 <h3 class="card-title mb-0">{{ $config['form_title'] }}</h3>
               </div>
               <div class="card-body">
                 <input type="hidden" name="template_id" value="{{ $id }}">
+                <input type="hidden" name="id" value="{{ $templateFormId }}">
                 <div class="form-group">
                   <label>Parent</label>
                   <select class="form-control" name="parent_id">
-                    <option value="" selected>Utama</option>
-                    @foreach($data as $item)
-                      <option value="{{ $item->id }}">{{ $item->label .'('.$item->tag.')'  }}</option>
-                    @endforeach
+                    @if($edited->children_count > 0 && $edited->tag == 'table')
+                      <option value="" selected>Utama</option>
+                    @else
+                      <option value="" selected>Utama</option>
+                      @foreach($data as $item)
+                        <option
+                          value="{{ $item->id }}" {{ $edited->parent_id == $item->id ? 'selected' : '' }}>{{ $item->label .'('.$item->tag.')'  }}</option>
+                      @endforeach
+                    @endif
                   </select>
                 </div>
                 <div class="form-group">
                   <label>Label</label>
-                  <input type="text" class="form-control" name="label" placeholder="Input Label Form">
+                  <input type="text" class="form-control" name="label" placeholder="Input Label Form"
+                         value="{{ $edited->label }}">
                 </div>
                 <div class="form-group">
                   <label>Name</label>
                   <input type="text" class="form-control" name="name"
-                         placeholder="Input Form Name {Name}, Table tidak perlu di isi ">
+                         placeholder="Input Form Name {Name}, Table tidak perlu di isi " value="{{ $edited->label }}">
                 </div>
                 <div class="form-group">
                   <label>Tag Input</label>
                   <select class="form-control" name="tag">
-                    <option>--Pilih Tag Input--</option>
-                    <option value="input">Input</option>
-                    <option value="select">Select</option>
-                    <option value="textarea">Textarea</option>
-                    <option value="checkbox">Checkbox</option>
-                    <option value="radio">Radio</option>
-                    <option value="ul">Ul</option>
-                    <option value="ol">Ol</option>
-                    <option value="block">Block</option>
-                    <option value="table">Table</option>
+                    @if($edited->children_count > 0 && $edited->tag == 'table')
+                      {!! $edited->tag == 'table' ? '<option value="table" selected>Table</option>' : NULL  !!}
+                    @else
+                      <option>--Pilih Tag Input--</option>
+                      <option value="input" {{ $edited->tag == 'input' ? 'selected' : NULL }}>Input</option>
+                      <option value="select" {{ $edited->tag == 'select' ? 'selected' : NULL }}>Select</option>
+                      <option value="textarea" {{ $edited->tag == 'textarea' ? 'selected' : NULL }}>Textarea</option>
+                      <option value="checkbox" {{ $edited->tag == 'checkbox' ? 'selected' : NULL }}>Checkbox</option>
+                      <option value="radio" {{ $edited->tag == 'radio' ? 'selected' : NULL }}>Radio</option>
+                      <option value="ul" {{ $edited->tag == 'ul' ? 'selected' : NULL }}>Ul</option>
+                      <option value="ol" {{ $edited->tag == 'ol' ? 'selected' : NULL }}>Ol</option>
+                      <option value="block" {{ $edited->tag == 'block' ? 'selected' : NULL }}>Block</option>
+                      {!! $edited->tag == 'table' ? '<option value="table" selected>Table</option>' : NULL  !!}
+                    @endif
                   </select>
                 </div>
                 <div class="form-group">
                   <label>Tipe</label>
+                  {{ $edited->type }}
                   <select class="form-control" name="type">
+                    @foreach($type as $item)
+                      <option
+                        value="{{ $item['val'] }}" {{ $edited->type == $item['val'] ? 'selected' : NULL }}>{{ $item['text'] }}</option>
+                    @endforeach
                   </select>
                 </div>
-                <div class="table-responsive" id="tableOption" style="display: none">
+                <div class="table-responsive" id="tableOption"
+                     style="{{ !in_array($edited->tag, $selectBox) ? "display: none" : NULL }}">
                   <table class="table table-bordered">
                     <thead>
                     <tr>
@@ -160,40 +177,56 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr class="items" id="items_1">
-                      <td></td>
-                      <td><input type="text" name="formoption[value][]" class="form-control"/></td>
-                      <td><input type="text" name="formoption[text][]" class="form-control"/></td>
-                      <td class="d-flex justify-content-center align-items-center">
-                        <div class="form-control" style="border: none">
-                          <input type="checkbox" name="formoption[selected][]" class="w-20px h-20px yes" value="1">
-                          <input type="checkbox" name="formoption[selected][]" value="0" checked class="no"
-                                 style="display: none">
-                        </div>
-                      </td>
-                    </tr>
+                    @foreach($edited->selectoption as $item)
+                      <tr class="items" id="items_{{ $loop->iteration }}">
+                        @if($loop->first)
+                          <td></td>
+                        @else
+                          <td>
+                            <button type="button" id="items_{{ $loop->iteration }}"
+                                    class="btn btn-block btn-danger rmItems">-
+                            </button>
+                          </td>
+                        @endif
+                        <td><input type="text" name="formoption[value][]" class="form-control"
+                                   value="{{ $item->option_value }}"/></td>
+                        <td><input type="text" name="formoption[text][]" class="form-control"
+                                   value="{{ $item->option_text }}"/></td>
+                        <td class="d-flex justify-content-center align-items-center">
+                          <div class="form-control" style="border: none">
+                            <input type="checkbox" name="formoption[selected][]" class="w-20px h-20px yes"
+                                   value="1" {{ $item->option_selected == 1 ? 'checked' : NULL }}>
+                            <input type="checkbox" name="formoption[selected][]" value="0" {{ $item->option_selected == 0 ? 'checked' : NULL }} class="no" style="display: none">
+                          </div>
+                        </td>
+                      </tr>
+                    @endforeach
                     </tbody>
                   </table>
                 </div>
                 <div class="form-group">
                   <label style="display: block;">Tampilkan Kolom</label>
                   <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                    <label class="btn btn-sm btn-info active">
-                      <input type="radio" name="is_column_table" value="0" checked> Tidak
+                    <label class="btn btn-sm btn-info {{ $edited->is_column_table == 0 ? 'active' : NULL }}">
+                      <input type="radio" name="is_column_table"
+                             value="0" {{ $edited->is_column_table == 0 ? 'checked' : NULL }}> Tidak
                     </label>
-                    <label class="btn btn-sm btn-info">
-                      <input type="radio" name="is_column_table" value="1"> Ya
+                    <label class="btn btn-sm btn-info {{ $edited->is_column_table == 0 ? 'active' : NULL }}">
+                      <input type="radio" name="is_column_table"
+                             value="1" {{ $edited->is_column_table == 1 ? 'checked' : NULL }}> Ya
                     </label>
                   </div>
                 </div>
-                <div id="isMultiple" class="form-group" style="display: none">
+                <div id="isMultiple" class="form-group"
+                     style="{{ $edited->tag != 'checkbox' ? 'display: none' : NULL }}">
                   <label style="display: block;">Multiple Checklist</label>
                   <div class="btn-group btn-group-toggle" data-toggle="buttons">
                     <label class="btn btn-sm btn-info active">
-                      <input type="radio" name="multiple" value="0" checked> Tidak
+                      <input type="radio" name="multiple" value="0" {{ $edited->multiple == 0 ? 'checked' : NULL }}>
+                      Tidak
                     </label>
                     <label class="btn btn-sm btn-info">
-                      <input type="radio" name="multiple" value="1"> Ya
+                      <input type="radio" name="multiple" value="1" {{ $edited->multiple == 1 ? 'checked' : NULL }}> Ya
                     </label>
                   </div>
                 </div>
@@ -322,10 +355,10 @@
         return listItems;
       }
 
-      $('input:checkbox').click(function () {
-        if ($(this).is(':checked')) {
+      $('input:checkbox').click(function(){
+        if($(this).is(':checked')){
           $(this).siblings('input:checkbox').prop('checked', false);
-        } else {
+        }else{
           $(this).siblings('input:checkbox').prop('checked', true);
         }
       });
@@ -337,6 +370,7 @@
           $('#tableOption').find("input[name^='formoption[selected]']").each(function () {
             let $idLoop = $(this).closest("tr").attr('id');
             if ($idLoop !== $row) {
+              // $(this).prop("checked", false);
               $(this).closest(".no").prop("checked", true);
               $(this).closest(".yes").prop("checked", false);
             }
@@ -440,12 +474,11 @@
             '<td class="d-flex justify-content-center align-items-center">' +
             '<div class="form-control" style="border: none">' +
             '<input type="checkbox" name="formoption[selected][]" class="w-20px h-20px yes" value="1">' +
-            '<input type="checkbox" name="formoption[selected][]" value="0" checked class="no" style="display: none">' +
+            '<input type="checkbox" name="formoption[selected][]" value="0" checked class="no" style="display: none">'+
             '</div>' +
             '</td>'
           );
         }
-        // initSelected();
       });
 
       $('tbody').on('click', '.rmItems', function () {
@@ -464,16 +497,20 @@
         $(this).find('.modal-body').find('a[name="id"]').attr('href', '');
       });
 
-      $("#formStore").submit(function (e) {
+      $("#formUpdate").submit(function (e) {
         e.preventDefault();
         let form = $(this);
         let btnSubmit = form.find("[type='submit']");
         let btnSubmitHtml = btnSubmit.html();
+        let spinner = $('<span role="status" class="spinner-border spinner-border-sm" aria-hidden="true"></span>');
         let url = form.attr("action");
         let data = new FormData(this);
         $.ajax({
           beforeSend: function () {
-            btnSubmit.addClass("disabled").html("<i class='fa fa-spinner fa-pulse fa-fw'></i> Loading ...").prop("disabled", "disabled");
+            btnSubmit.addClass("disabled").html("<i class='fa fa-spinner fa-pulse fa-fw'></i> Loading...").prop("disabled", "disabled");
+          },
+          headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
           },
           cache: false,
           processData: false,
@@ -500,8 +537,7 @@
               });
               toastr.error("Please complete your form", 'Failed !');
             }
-          },
-          error: function (response) {
+          }, error: function (response) {
             btnSubmit.removeClass("disabled").html(btnSubmitHtml).removeAttr("disabled");
             toastr.error(response.responseJSON.message, 'Failed !');
           }

@@ -30,4 +30,8 @@ class TemplateForm extends Model
   public function children(){
     return $this->hasMany(TemplateForm::class, 'parent_id')->orderBy('sort_order', 'asc');
   }
+
+  public function selectoption(){
+    return $this->hasMany(TemplateFormOption::class, 'template_form_id');
+  }
 }

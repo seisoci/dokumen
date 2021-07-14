@@ -80,6 +80,7 @@ class TemplateController extends Controller
       $config['page_title'] = "Atur Konfigurasi Template";
       $config['page_description'] = "Atur Konfigurasi Template";
       $config['form_title'] = "Tambah Field";
+      $config['tree_title'] = "Struktur & Urutan Data Field";
       $page_breadcrumbs = [
         ['page' => '/templates', 'title' => "List Template"],
         ['page' => '#', 'title' => "Atur Konfigurasi Template"],
@@ -95,6 +96,58 @@ class TemplateController extends Controller
         ->orderBy('sort_order', 'asc')
         ->get();
       return view('backend.templates.show', compact('config', 'page_breadcrumbs', 'id', 'data', 'tree'));
+    } else {
+      return abort(404, 'Forbidden');
+    }
+  }
+
+  public function edit(Request $request, $id)
+  {
+    $validator = Validator::make($request->all(), [
+      'id' => 'required|integer',
+    ]);
+    if ($validator->passes()) {
+      $config['page_title'] = "Atur Konfigurasi Template";
+      $config['page_description'] = "Atur Konfigurasi Template";
+      $config['form_title'] = "Edit Field";
+      $config['tree_title'] = "Struktur & Urutan Data Field";
+      $page_breadcrumbs = [
+        ['page' => '/templates', 'title' => "List Template"],
+        ['page' => '#', 'title' => "Atur Konfigurasi Template"],
+      ];
+
+      $templateFormId = $request->id;
+      $data = TemplateForm::where('template_id', $id)
+        ->whereIn('tag', ['table'])
+        ->get();
+
+      $edited = TemplateForm::with('selectoption')->withCount('children')->findOrFail($request->input('id'));
+
+      $tree = TemplateForm::with('children')
+        ->where('template_id', $id)
+        ->whereNull('parent_id')
+        ->orderBy('sort_order', 'asc')
+        ->get();
+
+      if($edited->tag == 'input'){
+        $type = [
+          ['val' => 'text', 'text' => 'Text'],
+          ['val' => 'number', 'text' => 'Number'],
+          ['val' => 'decimal', 'text' => 'Decimal'],
+          ['val' => 'file', 'text' => 'File'],
+          ['val' => 'date', 'text' => 'Date'],
+          ['val' => 'datetime', 'text' => 'Datetime'],
+          ['val' => 'image', 'text' => 'Image'],
+          ['val' => 'currency', 'text' => 'Currency'],
+          ['val' => 'time', 'text' => 'Time'],
+        ];
+      }else{
+        $type = [
+          ['val' => 'text', 'text' => 'Text'],
+        ];
+      }
+      $selectBox = ["select", "checkbox", "radio"];
+      return view('backend.templates.edit', compact('config', 'page_breadcrumbs', 'id', 'templateFormId', 'data', 'tree', 'edited', 'type', 'selectBox'));
     } else {
       return abort(404, 'Forbidden');
     }

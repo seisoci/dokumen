@@ -4,6 +4,12 @@ return [
 
   'items' => [
     [
+      'title' => 'Dashboard',
+      'root' => true,
+      'page' => 'dashboard',
+      'new-tab' => false,
+    ],
+    [
       'title' => 'Users',
       'root' => true,
       'page' => 'users',
