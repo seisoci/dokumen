@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('backend', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('backend', [LoginController::class, 'login']);
+Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/', [LoginController::class, 'login']);
 Route::get('logout', [LoginController::class, 'logout'])->name('logout');
 //Route::get('/quick-search', [PagesController::class, 'quicksearch'])->name('quick-search');
 
