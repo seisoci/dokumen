@@ -21,6 +21,12 @@ return [
       'page' => 'templates',
       'new-tab' => false,
     ],
+    [
+      'title' => 'Dokumen',
+      'root' => true,
+      'page' => 'documents',
+      'new-tab' => false,
+    ],
     // [
     //     'title' => 'Features',
     //     'root' => true,

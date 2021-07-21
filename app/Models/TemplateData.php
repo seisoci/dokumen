@@ -26,4 +26,8 @@ class TemplateData extends Model
   {
     return $date->format('Y-m-d H:i');
   }
+
+  public function templateform(){
+    return $this->belongsTo(TemplateForm::class, 'template_form_id');
+  }
 }

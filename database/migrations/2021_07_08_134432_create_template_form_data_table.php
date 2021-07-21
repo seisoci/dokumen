@@ -16,8 +16,8 @@ class CreateTemplateFormDataTable extends Migration
     Schema::create('template_form_data', function (Blueprint $table) {
       $table->id();
       $table->foreignId('template_data_id')->constrained('template_data')->onUpdate('cascade')->onDelete('cascade');
-      $table->foreignId('template_form_option_id')->constrained('template_form_options')->onUpdate('cascade')->onDelete('cascade');
-      $table->string('value');
+      $table->foreignId('template_form_id')->constrained('template_forms')->onUpdate('cascade')->onDelete('cascade');
+      $table->string('value')->nullable();
       $table->timestamps();
     });
   }

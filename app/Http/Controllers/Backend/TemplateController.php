@@ -14,10 +14,10 @@ class TemplateController extends Controller
 {
   public function index(Request $request)
   {
-    $config['page_title'] = "List Template";
-    $config['page_description'] = "List Template";
+    $config['page_title'] = "Daftar Template";
+    $config['page_description'] = "Daftar Template";
     $page_breadcrumbs = [
-      ['page' => '#', 'title' => "List Template"],
+      ['page' => '#', 'title' => "Daftar Template"],
     ];
 
     if ($request->ajax()) {
@@ -82,12 +82,12 @@ class TemplateController extends Controller
       $config['form_title'] = "Tambah Field";
       $config['tree_title'] = "Struktur & Urutan Data Field";
       $page_breadcrumbs = [
-        ['page' => '/templates', 'title' => "List Template"],
+        ['page' => '/templates', 'title' => "Daftar Template"],
         ['page' => '#', 'title' => "Atur Konfigurasi Template"],
       ];
 
       $data = TemplateForm::where('template_id', $id)
-        ->whereIn('tag', ['table'])
+        ->whereIn('tag', ['table', 'block'])
         ->get();
 
       $tree = TemplateForm::with('children')
@@ -109,20 +109,19 @@ class TemplateController extends Controller
     if ($validator->passes()) {
       $config['page_title'] = "Atur Konfigurasi Template";
       $config['page_description'] = "Atur Konfigurasi Template";
-      $config['form_title'] = "Edit Field";
+      $config['form_title'] = "Ubah Field";
       $config['tree_title'] = "Struktur & Urutan Data Field";
       $page_breadcrumbs = [
-        ['page' => '/templates', 'title' => "List Template"],
+        ['page' => '/templates', 'title' => "Daftar Template"],
         ['page' => '#', 'title' => "Atur Konfigurasi Template"],
       ];
 
       $templateFormId = $request->id;
       $data = TemplateForm::where('template_id', $id)
-        ->whereIn('tag', ['table'])
+        ->whereIn('tag', ['table', 'block'])
         ->get();
 
-      $edited = TemplateForm::with('selectoption')->withCount('children')->findOrFail($request->input('id'));
-
+      $edited = TemplateForm::with(['selectoption', 'parent'])->withCount('children')->findOrFail($request->input('id'));
       $tree = TemplateForm::with('children')
         ->where('template_id', $id)
         ->whereNull('parent_id')

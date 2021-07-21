@@ -19,10 +19,10 @@ class UsersController extends Controller
 {
   public function index(Request $request)
   {
-    $config['page_title'] = "List User";
-    $config['page_description'] = "List User";
+    $config['page_title'] = "Daftar User";
+    $config['page_description'] = "Daftar User";
     $page_breadcrumbs = [
-      ['page' => '#', 'title' => "List User"],
+      ['page' => '#', 'title' => "Daftar User"],
     ];
 
     if ($request->ajax()) {
@@ -59,7 +59,7 @@ class UsersController extends Controller
   {
     $config['page_title'] = "Tambah User";
     $page_breadcrumbs = [
-      ['page' => '/backend/users', 'title' => "List User"],
+      ['page' => '/backend/users', 'title' => "Daftar User"],
       ['page' => '#', 'title' => "Tambah User"],
     ];
     $data = array(
@@ -121,10 +121,10 @@ class UsersController extends Controller
 
   public function edit($id)
   {
-    $config['page_title'] = "Edit Users";
+    $config['page_title'] = "Ubah Users";
     $page_breadcrumbs = [
-      ['page' => '/backend/users', 'title' => "List User"],
-      ['page' => '#', 'title' => "Edit User"],
+      ['page' => '/backend/users', 'title' => "Daftar User"],
+      ['page' => '#', 'title' => "Ubah User"],
     ];
 
     $logInUser = Auth::user()->roles()->first()->name;

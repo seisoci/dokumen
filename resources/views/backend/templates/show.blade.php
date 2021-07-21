@@ -123,7 +123,7 @@
                 <div class="form-group">
                   <label>Name</label>
                   <input type="text" class="form-control" name="name"
-                         placeholder="Input Form Name {Name}, Table tidak perlu di isi ">
+                         placeholder="Input Form Name {Name} harus unik">
                 </div>
                 <div class="form-group">
                   <label>Tag Input</label>
@@ -175,7 +175,7 @@
                     </tbody>
                   </table>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="viewColumn">
                   <label style="display: block;">Tampilkan Kolom</label>
                   <div class="btn-group btn-group-toggle" data-toggle="buttons">
                     <label class="btn btn-sm btn-info active">
@@ -290,8 +290,7 @@
 @section('scripts')
   {{-- vendors --}}
   <script src="{{ asset('plugins/custom/datatables/datatables.bundle.js') }}" type="text/javascript"></script>
-  <script src="https://johnny.github.io/jquery-sortable/js/jquery-sortable.js" type="text/javascript"></script>
-  <script src="{{ asset('js/pages/crud/datatables/basic/basic.js') }}" type="text/javascript"></script>
+  <script src="{{ asset('js/backend/sortable/jquery-sortable.js') }}" type="text/javascript"></script>
   <script type="text/javascript">
     $(document).ready(function () {
       $("#sortable").sortable({
@@ -403,25 +402,36 @@
           $('#tableOption').css('display', 'none');
         }
         $("select[name='type']").empty();
+        const tableBlock = ["table", "block"];
         if (tag === 'input') {
           $.each(selectType, function (key, value) {
             $("select[name='type']").append($('<option></option>').val(value.val).text(value.text));
           });
           $("input[name='name']").prop('disabled', false);
-        } else if (tag === 'table') {
+          $('#viewColumn').css('display', '');
+        } else if (tableBlock.includes(tag)) {
           $("select[name='type']").append($('<option></option>').val('text').text('Text'));
-          $("input[name='name']").prop('disabled', true).val('');
+          $('#viewColumn').css('display', 'none');
         } else {
           $("select[name='type']").append($('<option></option>').val('text').text('Text'));
           $("input[name='name']").prop('disabled', false);
+          $('#viewColumn').css('display', '');
         }
       });
 
       $("select[name='parent_id']").on('change', function () {
         if (!$(this).val()) {
           $("select[name='tag']").append($('<option></option>').val('table').text('Table'));
+          $("select[name='tag']").append($('<option></option>').val('ul').text('Ul'));
+          $("select[name='tag']").append($('<option></option>').val('ol').text('Ol'));
+          $("select[name='tag']").append($('<option></option>').val('block').text('Block'));
+          $('#viewColumn').css('display', '');
         } else {
           $("select[name='tag'] option[value='table']").remove();
+          $("select[name='tag'] option[value='ul']").remove();
+          $("select[name='tag'] option[value='ol']").remove();
+          $("select[name='tag'] option[value='block']").remove();
+          $('#viewColumn').css('display', 'none');
         }
       });
 

@@ -87,7 +87,7 @@ return [
 
         'menu' => [
             'self' => [
-                'display' => false,
+                'display' => true,
                 'layout'  => 'default', // tab, default
                 'root-arrow' => false, // true, false
             ],

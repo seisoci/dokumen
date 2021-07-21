@@ -3,9 +3,9 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Backend\UsersController;
 use App\Http\Controllers\Backend\TemplateController;
-use App\Http\Controllers\Backend\DocumentController;
 use App\Http\Controllers\Backend\TemplateFormController;
 use App\Http\Controllers\Backend\DashboardController;
+use App\Http\Controllers\Backend\DocumentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,7 +37,8 @@ Route::middleware('auth:web')->group(function () {
   });
   Route::get('dashboard', DashboardController::class);
   Route::resource('templates', TemplateController::class);
-  Route::resource('documents', DocumentController::class);
+  Route::get('documents/{idTemplate}/create', [DocumentController::class, 'create'])->name('documents.create');
+  Route::resource('documents', DocumentController::class)->except('create');
   Route::post('templateforms/{id}/changehierarchy', [TemplateFormController::class, 'change_hierarchy'])->name('change_hierarchy');
   Route::resource('templateforms', TemplateFormController::class)->except(['index', 'create', 'edit']);
 });

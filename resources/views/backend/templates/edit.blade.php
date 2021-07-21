@@ -111,10 +111,10 @@
                 <div class="form-group">
                   <label>Parent</label>
                   <select class="form-control" name="parent_id">
-                    @if($edited->children_count > 0 && $edited->tag == 'table')
+                    @if($edited->children_count > 0 && in_array($edited->tag, ['table', 'block']))
                       <option value="" selected>Utama</option>
                     @else
-                      <option value="" selected>Utama</option>
+                      <option value="">Utama</option>
                       @foreach($data as $item)
                         <option
                           value="{{ $item->id }}" {{ $edited->parent_id == $item->id ? 'selected' : '' }}>{{ $item->label .'('.$item->tag.')'  }}</option>
@@ -130,13 +130,13 @@
                 <div class="form-group">
                   <label>Name</label>
                   <input type="text" class="form-control" name="name"
-                         placeholder="Input Form Name {Name}, Table tidak perlu di isi " value="{{ $edited->label }}">
+                         placeholder="Input Form Name {Name} harus unik" value="{{ $edited->label }}">
                 </div>
                 <div class="form-group">
                   <label>Tag Input</label>
                   <select class="form-control" name="tag">
-                    @if($edited->children_count > 0 && $edited->tag == 'table')
-                      {!! $edited->tag == 'table' ? '<option value="table" selected>Table</option>' : NULL  !!}
+                    @if($edited->children_count > 0 && in_array($edited->tag, ['table', 'block']))
+                      {!! in_array($edited->tag, ['table', 'block']) ? '<option value="'.$edited->tag.'" selected>'.ucfirst($edited->tag).'</option>' : NULL  !!}
                     @else
                       <option>--Pilih Tag Input--</option>
                       <option value="input" {{ $edited->tag == 'input' ? 'selected' : NULL }}>Input</option>
@@ -144,10 +144,10 @@
                       <option value="textarea" {{ $edited->tag == 'textarea' ? 'selected' : NULL }}>Textarea</option>
                       <option value="checkbox" {{ $edited->tag == 'checkbox' ? 'selected' : NULL }}>Checkbox</option>
                       <option value="radio" {{ $edited->tag == 'radio' ? 'selected' : NULL }}>Radio</option>
-                      <option value="ul" {{ $edited->tag == 'ul' ? 'selected' : NULL }}>Ul</option>
-                      <option value="ol" {{ $edited->tag == 'ol' ? 'selected' : NULL }}>Ol</option>
-                      <option value="block" {{ $edited->tag == 'block' ? 'selected' : NULL }}>Block</option>
-                      {!! $edited->tag == 'table' ? '<option value="table" selected>Table</option>' : NULL  !!}
+                      {!! !$edited->parent_id ? "<option value='table' ".($edited->tag == 'table' ? 'selected' : NULL).">Table</option>" : NULL  !!}
+                      {!! !$edited->parent_id ? "<option value='ul' ".($edited->tag == 'ul' ? 'selected' : NULL).">Ul</option>" : NULL  !!}
+                      {!! !$edited->parent_id ? "<option value='ol' ".($edited->tag == 'ol' ? 'selected' : NULL).">Ol</option>" : NULL  !!}
+                      {!! !$edited->parent_id ? "<option value='block' ".($edited->tag == 'block' ? 'selected' : NULL).">Block</option>" : NULL  !!}
                     @endif
                   </select>
                 </div>
@@ -177,6 +177,20 @@
                     </tr>
                     </thead>
                     <tbody>
+                    @if(isset($edited->selectoption) && count($edited->selectoption) < 1)
+                      <tr class="items" id="items_1">
+                        <td></td>
+                        <td><input type="text" name="formoption[value][]" class="form-control"/></td>
+                        <td><input type="text" name="formoption[text][]" class="form-control"/></td>
+                        <td class="d-flex justify-content-center align-items-center">
+                          <div class="form-control" style="border: none">
+                            <input type="checkbox" name="formoption[selected][]" class="w-20px h-20px yes" value="1">
+                            <input type="checkbox" name="formoption[selected][]" value="0" checked class="no"
+                                   style="display: none">
+                          </div>
+                        </td>
+                      </tr>
+                    @endif
                     @foreach($edited->selectoption as $item)
                       <tr class="items" id="items_{{ $loop->iteration }}">
                         @if($loop->first)
@@ -204,7 +218,7 @@
                     </tbody>
                   </table>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="viewColumn" style="{{ !$edited->parent_id ? NULL : 'display: none' }}">
                   <label style="display: block;">Tampilkan Kolom</label>
                   <div class="btn-group btn-group-toggle" data-toggle="buttons">
                     <label class="btn btn-sm btn-info {{ $edited->is_column_table == 0 ? 'active' : NULL }}">
@@ -212,8 +226,7 @@
                              value="0" {{ $edited->is_column_table == 0 ? 'checked' : NULL }}> Tidak
                     </label>
                     <label class="btn btn-sm btn-info {{ $edited->is_column_table == 0 ? 'active' : NULL }}">
-                      <input type="radio" name="is_column_table"
-                             value="1" {{ $edited->is_column_table == 1 ? 'checked' : NULL }}> Ya
+                      <input type="radio" name="is_column_table"value="1" {{ $edited->is_column_table == 1 ? 'checked' : NULL }}> Ya
                     </label>
                   </div>
                 </div>
@@ -233,7 +246,7 @@
               </div>
               <div class="card-footer d-flex justify-content-end">
                 <div class="btn-group">
-                  <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-fw fa-plus fa-sm"></i> Tambah
+                  <button type="submit" class="btn btn-warning btn-sm"><i class="fa fa-fw fa-plus fa-sm"></i> Ubah
                   </button>
                 </div>
               </div>
@@ -323,8 +336,7 @@
 @section('scripts')
   {{-- vendors --}}
   <script src="{{ asset('plugins/custom/datatables/datatables.bundle.js') }}" type="text/javascript"></script>
-  <script src="https://johnny.github.io/jquery-sortable/js/jquery-sortable.js" type="text/javascript"></script>
-  <script src="{{ asset('js/pages/crud/datatables/basic/basic.js') }}" type="text/javascript"></script>
+  <script src="{{ asset('js/backend/sortable/jquery-sortable.js') }}" type="text/javascript"></script>
   <script type="text/javascript">
     $(document).ready(function () {
       $("#sortable").sortable({
@@ -437,14 +449,14 @@
           $('#tableOption').css('display', 'none');
         }
         $("select[name='type']").empty();
+        const tableBlock = ["table", "block"];
         if (tag === 'input') {
           $.each(selectType, function (key, value) {
             $("select[name='type']").append($('<option></option>').val(value.val).text(value.text));
           });
           $("input[name='name']").prop('disabled', false);
-        } else if (tag === 'table') {
+        } else if (tableBlock.includes(tag)) {
           $("select[name='type']").append($('<option></option>').val('text').text('Text'));
-          $("input[name='name']").prop('disabled', true).val('');
         } else {
           $("select[name='type']").append($('<option></option>').val('text').text('Text'));
           $("input[name='name']").prop('disabled', false);
@@ -454,8 +466,16 @@
       $("select[name='parent_id']").on('change', function () {
         if (!$(this).val()) {
           $("select[name='tag']").append($('<option></option>').val('table').text('Table'));
+          $("select[name='tag']").append($('<option></option>').val('ul').text('Ul'));
+          $("select[name='tag']").append($('<option></option>').val('ol').text('Ol'));
+          $("select[name='tag']").append($('<option></option>').val('block').text('Block'));
+          $('#viewColumn').css('display', '');
         } else {
           $("select[name='tag'] option[value='table']").remove();
+          $("select[name='tag'] option[value='ul']").remove();
+          $("select[name='tag'] option[value='ol']").remove();
+          $("select[name='tag'] option[value='block']").remove();
+          $('#viewColumn').css('display', 'none');
         }
       });
 

@@ -102,6 +102,11 @@ class TemplateFormController extends Controller
         $items['selected'] = $request->input('formoption.selected');
 
         $data = TemplateForm::findOrFail($request->input('id'));
+        if ($request->input('tag') == 'checkbox') {
+          $multipleCheck = $request->input('multiple');
+        } else if (in_array($request->input('tag'), ['li', 'ol'])) {
+          $multipleCheck = 1;
+        }
         $data->selectoption()->delete();
         $data->update([
           'parent_id' => $request->input('parent_id'),
@@ -109,7 +114,7 @@ class TemplateFormController extends Controller
           'type' => $request->input('type'),
           'name' => $request->input('name'),
           'label' => $request->input('label'),
-          'multiple' => $request->input('tag') == 'checkbox' ? $request->input('multiple') : '0',
+          'multiple' => $multipleCheck ?? 0,
           'is_column_table' => $request->input('is_column_table') ?? '0',
         ]);
 
@@ -129,7 +134,7 @@ class TemplateFormController extends Controller
         $response = response()->json([
           'status' => 'success',
           'message' => 'Data has been saved',
-          'redirect' => 'reload',
+          'redirect' => "reload",
         ]);
       } catch (\Throwable $throw) {
         DB::rollBack();
