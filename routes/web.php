@@ -38,7 +38,8 @@ Route::middleware('auth:web')->group(function () {
   Route::get('dashboard', DashboardController::class);
   Route::resource('templates', TemplateController::class);
   Route::get('documents/{idTemplate}/create', [DocumentController::class, 'create'])->name('documents.create');
-  Route::resource('documents', DocumentController::class)->except('create');
+  Route::post('documents/{idTemplate}/store', [DocumentController::class, 'store'])->name('documents.store');
+  Route::resource('documents', DocumentController::class)->except(['create', 'store']);
   Route::post('templateforms/{id}/changehierarchy', [TemplateFormController::class, 'change_hierarchy'])->name('change_hierarchy');
   Route::resource('templateforms', TemplateFormController::class)->except(['index', 'create', 'edit']);
 });

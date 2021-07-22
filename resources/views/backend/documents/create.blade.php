@@ -12,13 +12,15 @@
           </h3>
         </div>
         <!--begin::Form-->
-        <form id="formStore" action="{{ route('documents.store') }}">
+        <form id="formStore" action="{{ route('documents.store', $idTemplate) }}">
           @csrf
           <div class="card-body">
-            {!! $renderHtml !!}
-            <div class="card-footer">
-              <button type="submit" class="btn btn-primary mr-2">Submit</button>
-              <button type="button" class="btn btn-secondary" onclick="window.history.back();">Cancel</button>
+            <div class="row">
+              {!! $renderHtml !!}
+            </div>
+            <div class="card-footer d-flex justify-content-end">
+              <button type="button" class="btn btn-secondary mr-2" onclick="window.history.back();">Cancel</button>
+              <button type="submit" class="btn btn-primary">Submit</button>
             </div>
           </div>
         </form>
@@ -31,6 +33,16 @@
 {{-- Styles Section --}}
 @section('styles')
   <link rel="stylesheet" href="{{ asset('css/backend/datetimepicker/bootstrap-datetimepicker.css') }}" type="text/css">
+  <style>
+    .table-responsive {
+      overflow-x: inherit;
+    }
+
+    .table td {
+      position: relative !important;
+
+    }
+  </style>
 @endsection
 
 {{-- Scripts Section --}}
@@ -44,7 +56,16 @@
       function initType() {
         $(".decimal").inputmask('decimal', {
           groupSeparator: '.',
-          digits: 0,
+          digits: 2,
+          rightAlign: true,
+          autoUnmask: true,
+          allowMinus: false,
+          removeMaskOnSubmit: true
+        });
+
+        $(".currency").inputmask('decimal', {
+          groupSeparator: '.',
+          digits: 2,
           rightAlign: true,
           autoUnmask: true,
           allowMinus: false,

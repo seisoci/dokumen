@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Template;
 use App\Models\TemplateForm;
 use App\Models\TemplateFormData;
-use App\Models\TemplateFormOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -142,7 +141,7 @@ class DocumentController extends Controller
       if (in_array($item->tag, $arrayList)) {
         $renderHtml .= $this->render($item->tag, $item->type, $item->name, $item->label, $item->selectoption, $item->multiple, $item->name)['html'];
         $renderJs .= $this->render($item->tag, $item->type, $item->name, $item->label, $item->selectoption, $item->multiple, $item->name)['js'] ?? NULL;
-      } elseif ($item->tag == 'table') {
+      } elseif ($item->tag == 'table' || $item->tag == 'block') {
         $renderHtml .= $this->render($item->tag, $item->type, $item->name, $item->label, $item->children, $item->multiple, $item->name)['html'];
         $renderJs .= $this->render($item->tag, $item->type, $item->name, $item->label, $item->children, $item->multiple, $item->name)['js'] ?? NULL;
       } else {
@@ -151,7 +150,12 @@ class DocumentController extends Controller
       }
     endforeach;
 
-    return view('backend.documents.create', compact('config', 'page_breadcrumbs', 'data', 'renderHtml', 'renderJs'));
+    return view('backend.documents.create', compact('config', 'page_breadcrumbs', 'data', 'idTemplate','renderHtml', 'renderJs'));
+  }
+
+  public function store($idTemplate, Request $request)
+  {
+    $templateForm = TemplateForm::with('children')->findOrFail($idTemplate);
   }
 
   public function render($tag, $type, $name, $label, $arrayData = array(), $multiple = FALSE, $tableName = NULL, $tableChild = FALSE)
@@ -160,69 +164,87 @@ class DocumentController extends Controller
     if ($tag === 'input') {
       if ($type == 'text') {
         $render['html'] = '
-              ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-              ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-              <input type="text" name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '" class="form-control" placeholder="Input ' . $label . '"/>
-              ' . (!$tableChild ? "</div>" : NULL) . '
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>' . $label . '</label>
+              <input type="text" name="' . $name . '" class="form-control" placeholder="Input ' . $label . '"/>
+            </div>
+          </div>
         ';
       } elseif ($type == 'number') {
         $render['html'] = '
-              ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-              ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-              <input type="number" name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '" class="form-control" placeholder="Input ' . $label . '"/>
-            ' . (!$tableChild ? "</div>" : NULL) . '
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>' . $label . '</label>
+                <input type="number" name="' . $name . '" class="form-control" placeholder="Input ' . $label . '"/>
+            </div>
+          </div>
         ';
       } elseif ($type == 'decimal') {
         $render['html'] = '
-              ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-              ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-              <input type="text" name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '" class="form-control decimal" placeholder="Input ' . $label . '"/>
-            ' . (!$tableChild ? "</div>" : NULL) . '
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>' . $label . '</label>
+              <input type="text" name="' . $name . '" class="form-control decimal" placeholder="Input ' . $label . '"/>
+            </div>
+          </div>
         ';
       } elseif ($type == 'file') {
         $render['html'] = '
-              ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-              ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>' . $label . '</label>
               <div class="custom-file">
-									<input type="file" class="custom-file-input" id="customFile" name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '" accept=".doc,.docx,.pdf">
+									<input type="file" class="custom-file-input" id="customFile" name="' . $name . '" accept=".doc,.docx,.pdf">
 									<label class="custom-file-label" for="customFile">Choose file</label>
 							</div>
-            ' . (!$tableChild ? "</div>" : NULL) . '
+            </div>
+          </div>
         ';
       } elseif ($type == 'date') {
         $render['html'] = '
-             ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-             ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-              <input type="text" name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '" class="form-control date" placeholder="Input ' . $label . '" readonly/>
-             ' . (!$tableChild ? "</div>" : NULL) . '
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>' . $label . '</label>
+              <input type="text" name="' . $name . '" class="form-control date" placeholder="Input ' . $label . '" readonly/>
+            </div>
+          </div>
         ';
       } elseif ($type == 'datetime') {
         $render['html'] = '
-              ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-              ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-              <input type="text" name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" />
-              ' . (!$tableChild ? "</div>" : NULL) . '
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>' . $label . '</label>
+              <input type="text" name="' . $name . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" />
+            </div>
+          </div>
         ';
       } elseif ($type == 'image') {
         $render['html'] = '
-              ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-              ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-              <input type="text" class="form-control" name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '" accept=".jpg,.png,.jpeg">
-              ' . (!$tableChild ? "</div>" : NULL) . '
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>' . $label . '</label>
+              <input type="text" class="form-control" name="' . $name . '" accept=".jpg,.png,.jpeg">
+            </div>
+          </div>
         ';
       } elseif ($type == 'currency') {
         $render['html'] = '
-              ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-              ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-              <input type="text" class="form-control currency" name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '">
-              ' . (!$tableChild ? "</div>" : NULL) . '
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>' . $label . '</label>
+              <input type="text" class="form-control currency" name="' . $name . '">
+            </div>
+          </div>
         ';
       } elseif ($type == 'time') {
         $render['html'] = '
-              ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-              ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-              <input type="text" class="form-control time"  name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '" readonly>
-              ' . (!$tableChild ? "</div>" : NULL) . '
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>' . $label . '</label>
+              <input type="text" class="form-control time"  name="' . $name . '" readonly>
+            </div>
+          </div>
         ';
       }
     } elseif ($tag == 'select') {
@@ -231,37 +253,43 @@ class DocumentController extends Controller
         $option .= '<option value="' . $item->option_value . '" ' . ($item->option_selected ? 'checked' : NULL) . '>' . $item->option_text . '</option>';
       endforeach;
       $render['html'] = '
-              ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-              ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-              <select name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '" class="form-control">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label>' . $label . '</label>
+              <select name="' . $name . '" class="form-control">
                 ' . $option . '
               </select>
-             ' . (!$tableChild ? "</div>" : NULL) . '
-        ';
+          </div>
+        </div>
+      ';
     } elseif ($tag == 'textarea') {
       $render['html'] = '
-              ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-              ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-              <textarea class="form-control"  rows="3"></textarea>
-             ' . (!$tableChild ? "</div>" : NULL) . '
+        <div class="col-md-6">
+          <div class="form-group">
+            <label>' . $label . '</label>
+            <textarea class="form-control" name="' . $name . '"  rows="3"></textarea>
+          </div>
+        </div>
       ';
     } elseif ($tag == 'checkbox') {
       $option = NULL;
       foreach ($arrayData as $item):
         $option .= '
             <label class="checkbox">
-                <input type="checkbox" name="' . $name . ($tableChild ? "[]" : NULL) . ($multiple ? "[]" : NULL) . '" value="' . $item->option_value . '" ' . ($item->option_selected ? 'checked' : NULL) . '/>
+                <input type="checkbox" name="' . $name . '" value="' . $item->option_value . '" ' . ($item->option_selected ? 'checked' : NULL) . '/>
                  ' . $item->option_text . '
            </label>
         ';
       endforeach;
       $render['html'] = '
-            ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-            ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
-            <div class="checkbox-list">
-               ' . $option . '
-            </div>
-           ' . (!$tableChild ? "</div>" : NULL) . '
+        <div class="col-md-6">
+          <div class="form-group">
+              <label>' . $label . '</label>
+              <div class="checkbox-list">
+                 ' . $option . '
+              </div>
+          </div>
+        </div>
       ';
     } elseif ($tag == 'radio') {
       $option = NULL;
@@ -274,23 +302,83 @@ class DocumentController extends Controller
         ';
       endforeach;
       $render['html'] = '
-            ' . (!$tableChild ? "<div class='form-group'>" : NULL) . '
-            ' . (!$tableChild ? "<label>$label</label>" : NULL) . '
+        <div class="col-md-6">
+          <div class="form-group">
+          <lavel>' . $label . '</lavel>
             <div class="radio-list">
                ' . $option . '
             </div>
-           ' . (!$tableChild ? "</div>" : NULL) . '
+          </div>
+        </div>
       ';
-    } elseif ($tag == 'table') {
-      $render['html'] = $this->tablerender($tag, $type, $name, $label, $arrayData, $multiple, $tableName, TRUE)['html'] ?? NULL;
-      $render['js'] = $this->tablerender($tag, $type, $name, $label, $arrayData, $multiple, $tableName, TRUE)['js'] ?? NULL;
+    } elseif ($tag == 'table' || $tag == 'block') {
+      $render['html'] = $this->tablerender($tag, $type, $name, $label, $arrayData)['html'] ?? NULL;
+      $render['js'] = $this->tablerender($tag, $type, $name, $label, $arrayData)['js'] ?? NULL;
+    } elseif ($tag == 'ul' || $tag == 'li') {
+      $html = '<input type="text" name="' . $name . '[1]' . '[' . $name . '][]' . '" class="form-control" placeholder="Input ' . $label . '"/>';
+      $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +'][]") . '[' . $name . ']' . '" class="form-control" placeholder="Input ' . $label . '"/>';
+      $buildTable = '<td>';
+      $buildTable .= $html;
+      $buildTable .= '</td>';
+      $jsInput = preg_replace("/\r|\n/", "", sprintf("%s", "'<td>$jshtml</td>'"));
+      $render['html'] = '
+          <label class="col-md-12">' . $label . ' :</label>
+          <div class="col-md-8">
+            <div class="table-responsive" id="tableOption">
+               <table class="table table-bordered">
+                  <thead>
+                     <tr>
+                       <th class="text-center" scope="col">
+                         <button type="button" class="add' . $name . ' btn btn-sm btn-primary">+</button>
+                       </th>
+                        <th>' . $label . '</th>
+                     </tr>
+                     </thead>
+                  <tbody>
+                    <tr class="' . $name . '" id="' . $name . '_1">
+                      <td></td>
+                      ' . $buildTable . '
+                    </tr>
+                  </tbody>
+               </table>
+            </div>
+          </div>
+        ';
+      $jsAfter = "<tr class='$name' id='{$name}_" . sprintf("%s", '" + nextindex + "') . "'></tr>";
+      $render['js'] = '
+          $(".add' . $name . '").on("click", function () {
+            let total_items = $(".' . $name . '").length;
+            let lastid = $(".' . $name . ':last").attr("id");
+            let split_id = lastid.split("_");
+            let nextindex = Number(split_id[split_id.length-1]) + 1;
+            let max = 100;
+            if (total_items < max) {
+              $(".' . $name . ':last").after("' . $jsAfter . '");
+               $("#' . $name . '_" + nextindex).append(
+               "' . sprintf('%s', "<td><button style='max-width: 50px' type='button' id='{$name}_" . sprintf("%s", '" + nextindex + "') . "' class='btn btn-block btn-danger rm{$name}'>-</button></td>" . "") . '"+
+               ' . $jsInput . '
+               );
+            }
+            initType();
+          });
+
+          $("tbody").on("click", ".rm' . $name . '", function () {
+            let id = this.id;
+            let split_id = id.split("_");
+            let deleteindex = split_id[split_id.length-1];
+            $("#' . $name . '_"  + deleteindex).remove();
+            initType();
+          });
+
+          ';
+    } else {
+      $render['html'] = NULL;
     }
     return $render;
   }
 
-  public function tablerender($tag, $type, $name, $label, $arrayData = array(), $multiple = FALSE, $tableName = NULL, $tableChild = FALSE)
+  public function tablerender($tag, $type, $name, $label, $arrayData = array())
   {
-    $arrayList = ['checkbox', 'radio'];
     $buildTable = NULL;
     $jsInput = NULL;
     $thead = NULL;
@@ -303,65 +391,84 @@ class DocumentController extends Controller
       $buildTable .= '<td>';
       if ($item->tag === 'input') {
         if ($item->type == 'text') {
-          $html = '<input type="text" name="' . $name . '[1]' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" class="form-control" placeholder="Input ' . $item->label . '"/>';
-          $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" class="form-control" placeholder="Input ' . $item->label . '"/>';
+          $html = '<input type="text" name="' . $name . '[1]' . '[' . $item->name . ']' . '" class="form-control" placeholder="Input ' . $item->label . '"/>';
+          $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control" placeholder="Input ' . $item->label . '"/>';
         } elseif ($item->type == 'number') {
-          $html = '<input type="number" name="' . $name . '[1]' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" class="form-control" placeholder="Input ' . $item->label . '"/>';
-          $jshtml = '<input type="number" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '"  class="form-control" placeholder="Input ' . $item->label . '"/>';
-        }elseif ($item->type == 'decimal') {
-          $html = '<input type="text" name="' . $name . '[1]' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" class="form-control decimal" placeholder="Input ' . $item->label . '"/>';
-          $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" class="form-control decimal" placeholder="Input ' . $item->label . '"/>';
+          $html = '<input type="number" name="' . $name . '[1]' . '[' . $item->name . ']' . '" class="form-control" placeholder="Input ' . $item->label . '"/>';
+          $jshtml = '<input type="number" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '"  class="form-control" placeholder="Input ' . $item->label . '"/>';
+        } elseif ($item->type == 'decimal') {
+          $html = '<input type="text" name="' . $name . '[1]' . '[' . $item->name . ']' . '" class="form-control decimal" placeholder="Input ' . $item->label . '"/>';
+          $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control decimal" placeholder="Input ' . $item->label . '"/>';
         } elseif ($item->type == 'file') {
-          $html = '<div class="custom-file"><input type="file" class="custom-file-input" id="customFile" name="' . $name . '[1]' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" accept=".doc,.docx,.pdf"><label class="custom-file-label" for="customFile">Choose file</label></div>';
-          $jshtml = '<div class="custom-file"><input type="file" class="custom-file-input" id="customFile" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" accept=".doc,.docx,.pdf"><label class="custom-file-label" for="customFile">Choose file</label></div>';
+          $html = '<div class="custom-file"><input type="file" class="custom-file-input" id="customFile" name="' . $name . '[1]' . '[' . $item->name . ']' . '" accept=".doc,.docx,.pdf"><label class="custom-file-label" for="customFile">Choose file</label></div>';
+          $jshtml = '<div class="custom-file"><input type="file" class="custom-file-input" id="customFile" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" accept=".doc,.docx,.pdf"><label class="custom-file-label" for="customFile">Choose file</label></div>';
         } elseif ($item->type == 'date') {
-          $html = '<input type="text" name="' . $name . '[1]' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" class="form-control date" placeholder="Input ' . $item->label . '" readonly/>';
-          $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" class="form-control date" placeholder="Input ' . $item->label . '" readonly/>';
+          $html = '<input type="text" name="' . $name . '[1]' . '[' . $item->name . ']' . '" class="form-control date" placeholder="Input ' . $item->label . '" readonly/>';
+          $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control date" placeholder="Input ' . $item->label . '" readonly/>';
+        } elseif ($item->type == 'datetime') {
+          $html = '<input type="text" name="' . $name . '[1]' . '[' . $item->name . ']' . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" />';
+          $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" />';
+        } elseif ($item->type == 'image') {
+          $html = '<input type="text" class="form-control" name="' . $name . '[1]' . '[' . $item->name . ']' . '" accept=".jpg,.png,.jpeg">';
+          $jshtml = '<input type="text" class="form-control" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" accept=".jpg,.png,.jpeg">';
+        } elseif ($item->type == 'currency') {
+          $html = '<input type="text" class="form-control currency" name="' . $name . '[1]' . '[' . $item->name . ']' . '">';
+          $jshtml = '<input type="text" class="form-control currency" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '">';
+        } elseif ($item->type == 'time') {
+          $html = '<input type="text" class="form-control time"  name="' . $name . '[1]' . '[' . $item->name . ']' . '" readonly>';
+          $jshtml = '<input type="text" class="form-control time"  name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" readonly>';
         }
-      }
-      if ($item->tag == 'select') {
+      } elseif ($item->tag == 'select') {
         $option = NULL;
         foreach ($item->selectoption as $itemSelect):
           $option .= '<option value="' . $itemSelect->option_value . '" ' . ($itemSelect->option_selected ? 'checked' : NULL) . '>' . $itemSelect->option_text . '</option>';
         endforeach;
         $html = '
-              <select name="' . $name . '[1]' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" class="form-control">
-                ' . $option . '
-              </select>
+          <select name="' . $name . '[1]' . '[' . $item->name . ']' . '" class="form-control">
+            ' . $option . '
+          </select>
         ';
         $jshtml = '
-              <select name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" class="form-control">
-                ' . $option . '
-              </select>
+          <select name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control">
+            ' . $option . '
+          </select>
         ';
+      } elseif ($item->tag == 'textarea') {
+        $html = '<textarea class="form-control"  name="' . $name . '[1]' . '[' . $item->name . ']' . '" rows="3"></textarea>';
+        $jshtml = '<textarea class="form-control"  name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" rows="3"></textarea>';
       } elseif ($item->tag == 'checkbox') {
         foreach ($item->selectoption as $itemCheckbox):
           $option .= '
             <label class="checkbox">
-                <input type="checkbox" name="' . $name . '[1]' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . ($itemCheckbox->option_selected ? 'checked' : NULL) . '/>
-                 ' . $itemCheckbox->option_text . '
+                <input type="checkbox" name="' . $name . '[1]' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . ($itemCheckbox->option_selected ? 'checked' : NULL) . '/>  ' . $itemCheckbox->option_text . '
            </label>
           ';
           $optionjs .= '
             <label class="checkbox">
-                <input type="checkbox" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" ' . ($itemCheckbox->option_selected ? 'checked' : NULL) . '/>
-                 ' . $itemCheckbox->option_text . '
+                <input type="checkbox" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" ' . ($itemCheckbox->option_selected ? 'checked' : NULL) . '/>  ' . $itemCheckbox->option_text . '
            </label>
           ';
         endforeach;
-        $html = '
-            <div class="checkbox-list">
-               ' . $option . '
-            </div>
+        $html = '<div class="checkbox-list">' . $option . '</div>';
+        $jshtml = '<div class="checkbox-list">' . $optionjs . '</div>';
+      } elseif ($item->tag == 'radio') {
+        foreach ($item->selectoption as $itemRadio):
+          $option .= '
+            <label class="radio">
+              <input type="radio" name="' . $name . '[1]' . '[' . $item->name . ']' . '" value="' . $itemRadio->option_value . '" ' . ($itemRadio->option_selected ? 'checked' : NULL) . '/>
+              <span></span> ' . $itemRadio->option_text . '
+           </label>
         ';
-
-        $jshtml = '
-            <div class="checkbox-list">
-               ' . $optionjs . '
-            </div>
+          $optionjs .= '
+          <label class="radio">
+            <input type="radio" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" ' . ($itemRadio->option_selected ? 'checked' : NULL) . '/>
+            <span></span> ' . $itemRadio->option_text . '
+         </label>
         ';
+        endforeach;
+        $html = '<div class="radio-list">' . $option . '</div>';
+        $jshtml = '<div class="radio-list">' . $optionjs . '</div>';
       }
-
 
       $buildTable .= $html;
       $buildTable .= '</td>';
@@ -372,29 +479,31 @@ class DocumentController extends Controller
     endforeach;
     if (isset($thead)) {
       $render['html'] = '
-          <label>' . $label . ' :</label>
-          <div class="table-responsive" id="tableOption">
-             <table class="table table-bordered">
-                <thead>
-                   <tr>
-                     <th class="text-center" scope="col">
-                       <button type="button" class="add btn btn-sm btn-primary">+</button>
-                     </th>
-                      ' . $thead . '
-                   </tr>
-                   </thead>
-                <tbody>
-                  <tr class="' . $name . '" id="' . $name . '_1">
-                    <td></td>
-                    ' . $buildTable . '
-                  </tr>
-                </tbody>
-             </table>
+          <label class="col-md-12">' . $label . ' :</label>
+          <div class="col-md-12">
+            <div class="table-responsive" id="tableOption">
+               <table class="table table-bordered">
+                  <thead>
+                     <tr>
+                       <th class="text-center" scope="col">
+                         <button type="button" class="add' . $name . ' btn btn-sm btn-primary">+</button>
+                       </th>
+                        ' . $thead . '
+                     </tr>
+                     </thead>
+                  <tbody>
+                    <tr class="' . $name . '" id="' . $name . '_1">
+                      <td></td>
+                      ' . $buildTable . '
+                    </tr>
+                  </tbody>
+               </table>
+            </div>
           </div>
         ';
       $jsAfter = "<tr class='$name' id='{$name}_" . sprintf("%s", '" + nextindex + "') . "'></tr>";
       $render['js'] = '
-          $(".add").on("click", function () {
+          $(".add' . $name . '").on("click", function () {
             let total_items = $(".' . $name . '").length;
             let lastid = $(".' . $name . ':last").attr("id");
             let split_id = lastid.split("_");

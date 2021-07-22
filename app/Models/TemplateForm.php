@@ -41,7 +41,7 @@ class TemplateForm extends Model
   }
 
   public function selectoption(){
-    return $this->hasMany(TemplateFormOption::class, 'template_form_id');
+    return $this->hasMany(TemplateFormOption::class, 'template_form_id')->orderBy('id', 'asc');
   }
 
   public function formdata(){
