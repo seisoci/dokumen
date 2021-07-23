@@ -8,7 +8,7 @@ return [
             'title' => 'Users',
             'root' => true,
             'icon' => 'media/svg/icons/General/User.svg', // or can be 'flaticon-home' or any flaticon-*
-            'page' => '/backend/users',
+            'page' => '/users',
             'new-tab' => false,
         ],
 

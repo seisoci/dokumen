@@ -6,20 +6,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use DateTimeInterface;
 
+/**
+ * @mixin IdeHelperTemplateData
+ */
 class TemplateData extends Model
 {
   use HasFactory;
 
   protected $fillable = [
-    'template_id',
-    'parent_id',
-    'tag',
-    'type',
-    'name',
-    'label',
-    'multiple',
-    'sort_order',
-    'is_column_table',
+    'template_id'
   ];
 
   protected function serializeDate(DateTimeInterface $date)

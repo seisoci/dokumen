@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Template;
+use App\Models\TemplateData;
 use App\Models\TemplateForm;
 use App\Models\TemplateFormData;
 use Illuminate\Http\Request;
@@ -108,7 +109,7 @@ class DocumentController extends Controller
                   <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
                       <a class="dropdown-item" href="templates/' . $row->id . '">Generate</a>
                       <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalEdit" data-id="' . $row->id . '"  data-name="' . $row->name . '">Ubah</a>
-                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalDelete" data-id="' . $row->id . '">Hapus</a>
+                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalDelete" data-id="' . $row->id . '">Hapus</a>
                   </div>
               </div>
           ';
@@ -150,12 +151,104 @@ class DocumentController extends Controller
       }
     endforeach;
 
-    return view('backend.documents.create', compact('config', 'page_breadcrumbs', 'data', 'idTemplate','renderHtml', 'renderJs'));
+    return view('backend.documents.create', compact('config', 'page_breadcrumbs', 'data', 'idTemplate', 'renderHtml', 'renderJs'));
   }
 
   public function store($idTemplate, Request $request)
   {
-    $templateForm = TemplateForm::with('children')->findOrFail($idTemplate);
+    $templateForm = TemplateForm::with(['children', 'children.selectoption', 'selectoption'])
+      ->whereNull('parent_id')
+      ->where('template_id', $idTemplate)
+      ->orderBy('sort_order', 'asc')
+      ->get();
+
+    try {
+      DB::beginTransaction();
+      $templateData = TemplateData::create([
+        'template_id' => $idTemplate,
+      ]);
+
+      foreach ($templateForm as $itemParent):
+        if (!in_array($itemParent->tag, ['table', 'block'])) {
+          if ($request->input($itemParent->name) && !in_array($itemParent->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
+            TemplateFormData::create([
+              'template_data_id' => $templateData->id,
+              'template_form_id' => $itemParent->id,
+              'value' => $request->input($itemParent->name)
+            ]);
+          elseif ($request->input($itemParent->name) && in_array($itemParent->tag, ['checkbox', 'ul', 'ol'])):
+            if (!$itemParent->multiple) {
+              TemplateFormData::create([
+                'template_data_id' => $templateData->id,
+                'template_form_id' => $itemParent->id,
+                'value' => $request->input($itemParent->name)
+              ]);
+            } else {
+              TemplateFormData::create([
+                'template_data_id' => $templateData->id,
+                'template_form_id' => $itemParent->id,
+                'value' => implode(", ", $request->input($itemParent->name))
+              ]);
+            }
+          endif;
+        } elseif (in_array($itemParent->tag, ['table', 'block'])) {
+          foreach ($itemParent->children as $itemChild):
+            $childrenForm = array_values($request[$itemParent->name]);
+            foreach ($childrenForm as $item):
+              if (!in_array($itemChild->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
+                TemplateFormData::create([
+                  'template_data_id' => $templateData->id,
+                  'template_form_id' => $itemChild->id,
+                  'value' => $item[$itemChild->name] ?? NULL
+                ]);
+              elseif (in_array($itemChild->tag, ['checkbox', 'ul', 'ol'])):
+                if (!$itemChild->multiple) {
+                  TemplateFormData::create([
+                    'template_data_id' => $templateData->id,
+                    'template_form_id' => $itemChild->id,
+                    'value' => $item[$itemChild->name] ?? NULL
+                  ]);
+                } else {
+                  TemplateFormData::create([
+                    'template_data_id' => $templateData->id,
+                    'template_form_id' => $itemChild->id,
+                    'value' => implode(", ", $item[$itemChild->name]) ?? NULL
+                  ]);
+                }
+              endif;
+            endforeach;
+          endforeach;
+        }
+      endforeach;
+      DB::commit();
+      $response = response()->json([
+        'status' => 'success',
+        'message' => 'Data berhasil disimpan',
+        'redirect' => "/documents/{$idTemplate}"
+      ]);
+    } catch (\Throwable $throw) {
+      DB::rollBack();
+      $response = response()->json([
+        'status' => 'error',
+        'error' => 'Gagal menyimpan data'
+      ]);
+    }
+    return $response;
+  }
+
+  public function destroy($id){
+    $response = response()->json([
+      'status' => 'failed',
+      'message' => 'Gagal menghapus data',
+    ]);
+    $data = TemplateData::findOrFail($id);
+    if($data->delete()){
+      $response = response()->json([
+        'status' => 'success',
+        'message' => 'Data berhasil dihapus',
+      ]);
+    }
+    return $response;
   }
 
   public function render($tag, $type, $name, $label, $arrayData = array(), $multiple = FALSE, $tableName = NULL, $tableChild = FALSE)
@@ -276,7 +369,7 @@ class DocumentController extends Controller
       foreach ($arrayData as $item):
         $option .= '
             <label class="checkbox">
-                <input type="checkbox" name="' . $name . '" value="' . $item->option_value . '" ' . ($item->option_selected ? 'checked' : NULL) . '/>
+                <input type="checkbox" name="' . $name . ($multiple ? "[]" : NULL) . '" value="' . $item->option_value . '" ' . ($item->option_selected ? 'checked' : NULL) . '/>
                  ' . $item->option_text . '
            </label>
         ';
@@ -314,9 +407,9 @@ class DocumentController extends Controller
     } elseif ($tag == 'table' || $tag == 'block') {
       $render['html'] = $this->tablerender($tag, $type, $name, $label, $arrayData)['html'] ?? NULL;
       $render['js'] = $this->tablerender($tag, $type, $name, $label, $arrayData)['js'] ?? NULL;
-    } elseif ($tag == 'ul' || $tag == 'li') {
-      $html = '<input type="text" name="' . $name . '[1]' . '[' . $name . '][]' . '" class="form-control" placeholder="Input ' . $label . '"/>';
-      $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +'][]") . '[' . $name . ']' . '" class="form-control" placeholder="Input ' . $label . '"/>';
+    } elseif ($tag == 'ul' || $tag == 'ol') {
+      $html = '<input type="text" name="' . $name . ($multiple ? "[]" : NULL) . '" class="form-control" placeholder="Input ' . $label . '"/>';
+      $jshtml = '<input type="text" name="' . $name . sprintf("%s", "[]") . '" class="form-control" placeholder="Input ' . $label . '"/>';
       $buildTable = '<td>';
       $buildTable .= $html;
       $buildTable .= '</td>';
@@ -445,7 +538,7 @@ class DocumentController extends Controller
           ';
           $optionjs .= '
             <label class="checkbox">
-                <input type="checkbox" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" ' . ($itemCheckbox->option_selected ? 'checked' : NULL) . '/>  ' . $itemCheckbox->option_text . '
+                <input type="checkbox" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . ($itemCheckbox->option_selected ? 'checked' : NULL) . '/>  ' . $itemCheckbox->option_text . '
            </label>
           ';
         endforeach;

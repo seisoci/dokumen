@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @mixin IdeHelperMenus
+ */
 class Menus extends Model
 {
     protected $table = 'menus';

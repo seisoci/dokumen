@@ -59,7 +59,7 @@ class UsersController extends Controller
   {
     $config['page_title'] = "Tambah User";
     $page_breadcrumbs = [
-      ['page' => '/backend/users', 'title' => "Daftar User"],
+      ['page' => '/users', 'title' => "Daftar User"],
       ['page' => '#', 'title' => "Tambah User"],
     ];
     $data = array(
@@ -102,7 +102,7 @@ class UsersController extends Controller
         $response = response()->json([
           'status' => 'success',
           'message' => 'Data has been saved',
-          'redirect' => '/backend/users'
+          'redirect' => '/users'
         ]);
       } catch (\Exception $e) {
         DB::rollback();
@@ -123,7 +123,7 @@ class UsersController extends Controller
   {
     $config['page_title'] = "Ubah Users";
     $page_breadcrumbs = [
-      ['page' => '/backend/users', 'title' => "Daftar User"],
+      ['page' => '/users', 'title' => "Daftar User"],
       ['page' => '#', 'title' => "Ubah User"],
     ];
 
@@ -194,7 +194,7 @@ class UsersController extends Controller
           $response = response()->json([
             'status' => 'success',
             'message' => 'Data berhasil disimpan',
-            'redirect' => '/backend/users'
+            'redirect' => '/users'
           ]);
         } catch (\Exception $e) {
           DB::rollback();

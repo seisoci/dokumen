@@ -63,7 +63,7 @@ class RolesController extends Controller
         $response = response()->json([
           'status' => 'success',
           'message' => 'Data has been saved',
-          'redirect' => '/backend/roles'
+          'redirect' => '/roles'
         ]);
       }else{
         $response = response()->json(['error'=>$validator->errors()->all()]);
@@ -75,7 +75,7 @@ class RolesController extends Controller
     {
       $config['page_title'] = "Edit Roles";
       $page_breadcrumbs = [
-        ['page' => '/backend/roles','title' => "List Roles"],
+        ['page' => '/roles','title' => "List Roles"],
         ['page' => '#','title' => "Edit Roles"],
       ];
       $data = Role::find($id);
@@ -101,7 +101,7 @@ class RolesController extends Controller
           $response = response()->json([
             'status' => 'success',
             'message' => 'Data has been saved',
-            'redirect' => '/backend/roles'
+            'redirect' => '/roles'
           ]);
         }
       }else{
@@ -117,7 +117,7 @@ class RolesController extends Controller
           $response = response()->json([
               'status' => 'success',
               'message' => 'Data has been deleted',
-              'redirect' => '/backend/roles'
+              'redirect' => '/roles'
           ]);
       }
       return $response;

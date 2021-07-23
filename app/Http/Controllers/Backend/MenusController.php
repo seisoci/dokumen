@@ -40,7 +40,7 @@ class MenusController extends Controller
       $response = response()->json([
         'status' => 'success',
         'message' => 'Data has been saved',
-        'redirect' => '/backend/menus'
+        'redirect' => '/menus'
       ]);
     }else{
       $response = response()->json(['error'=>$validator->errors()->all()]);
@@ -54,7 +54,7 @@ class MenusController extends Controller
     $config['page_title']       = "Edit Menus";
     $config['page_description'] = "Manage menu structure";
     $page_breadcrumbs = [
-      ['page' => '/backend/menus','title' => "List Menus"],
+      ['page' => '/menus','title' => "List Menus"],
       ['page' => '#','title' => "Edit Menus"],
     ];
     $menu = Menus::findOrFail($id);
@@ -82,7 +82,7 @@ class MenusController extends Controller
       $response = response()->json([
         'status' => 'success',
         'message' => 'Data has been updated',
-        'redirect' => '/backend/menus'
+        'redirect' => '/menus'
       ]);
     }else{
       $response = response()->json(['error'=>$validator->errors()->all()]);
@@ -109,7 +109,7 @@ class MenusController extends Controller
       $response = response()->json([
           'status' => 'success',
           'message' => 'Data has been deleted',
-          'redirect' => '/backend/menus'
+          'redirect' => '/menus'
       ]);
     }
     return $response;
@@ -181,7 +181,7 @@ class MenusController extends Controller
       $response = response()->json([
           'status' => 'success',
           'message' => 'Data has been saved',
-          'redirect' => '/backend/menus'
+          'redirect' => '/menus'
       ]);
     } catch (\Exception $e) {
       DB::rollback();

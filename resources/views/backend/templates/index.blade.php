@@ -168,9 +168,6 @@
 @section('scripts')
   {{-- vendors --}}
   <script src="{{ asset('plugins/custom/datatables/datatables.bundle.js') }}" type="text/javascript"></script>
-
-  {{-- page scripts --}}
-  <script src="{{ asset('js/pages/crud/datatables/basic/basic.js') }}" type="text/javascript"></script>
   <script type="text/javascript">
     $(document).ready(function () {
       let dataTable = $('#Datatable').DataTable({

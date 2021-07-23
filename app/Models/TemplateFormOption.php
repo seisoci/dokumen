@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use DateTimeInterface;
 
+/**
+ * @mixin IdeHelperTemplateFormOption
+ */
 class TemplateFormOption extends Model
 {
   use HasFactory;

@@ -11,7 +11,7 @@ class DashboardController extends Controller
       $config['page_title'] = "Dashboard";
       $config['page_description'] = "Dashboard";
       $page_breadcrumbs = [
-        ['page' => '/backend/dashboard', 'title' => "Dashboard"],
+        ['page' => '/dashboard', 'title' => "Dashboard"],
       ];
       $data = NULL;
       return view('backend.dashboard.index', compact('config', 'page_breadcrumbs', 'data'));

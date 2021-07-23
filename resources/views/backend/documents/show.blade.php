@@ -55,6 +55,28 @@
       </div>
     </div>
   </div>
+  <div class="modal fade text-left" id="modalDelete" tabindex="-1" role="dialog" aria-labelledby="modalDeleteLabel"
+       aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDeleteLabel">Hapus</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <i aria-hidden="true" class="ki ki-close"></i>
+          </button>
+        </div>
+        @method('DELETE')
+        <div class="modal-body">
+          <a href="" type="hidden" name="id" disabled></a>
+          Anda yakin ingin menghapus data ini?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button id="formDelete" type="button" class="btn btn-danger">Accept</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 @endsection
 
@@ -67,9 +89,6 @@
 @section('scripts')
   {{-- vendors --}}
   <script src="{{ asset('plugins/custom/datatables/datatables.bundle.js') }}" type="text/javascript"></script>
-
-  {{-- page scripts --}}
-  <script src="{{ asset('js/pages/crud/datatables/basic/basic.js') }}" type="text/javascript"></script>
   <script type="text/javascript">
     $(document).ready(function () {
       let dataTable = $('#Datatable').DataTable({
@@ -127,7 +146,7 @@
 
       $('#modalDelete').on('show.bs.modal', function (event) {
         let id = $(event.relatedTarget).data('id');
-        $(this).find('.modal-body').find('a[name="id"]').attr('href', '{{ route("templates.index") }}/' + id);
+        $(this).find('.modal-body').find('a[name="id"]').attr('href', '{{ route("documents.index") }}/' + id);
       });
 
       $('#modalDelete').on('hidden.bs.modal', function (event) {
@@ -169,52 +188,6 @@
           error: function (response) {
             btnSubmit.removeClass("disabled").html(btnSubmitHtml).removeAttr("disabled");
             toastr.error(response.responseJSON.message, 'Failed !');
-          }
-        });
-      });
-
-      $("#formUpdate").submit(function (e) {
-        e.preventDefault();
-        let form = $(this);
-        let btnSubmit = form.find("[type='submit']");
-        let btnSubmitHtml = btnSubmit.html();
-        let spinner = $('<span role="status" class="spinner-border spinner-border-sm" aria-hidden="true"></span>');
-        let url = form.attr("action");
-        let data = new FormData(this);
-        $.ajax({
-          beforeSend: function () {
-            btnSubmit.addClass("disabled").html("<i class='fa fa-spinner fa-pulse fa-fw'></i> Loading...").prop("disabled", "disabled");
-          },
-          headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-          },
-          cache: false,
-          processData: false,
-          contentType: false,
-          type: "POST",
-          url: url,
-          data: data,
-          success: function (response) {
-            btnSubmit.removeClass("disabled").html(btnSubmitHtml).removeAttr("disabled");
-            if (response.status === "success") {
-              toastr.success(response.message, 'Success !');
-              $('#modalEdit').modal('hide');
-              form[0].reset();
-              dataTable.draw();
-              $("[role='alert']").parent().css("display", "none");
-            } else {
-              $("[role='alert']").parent().removeAttr("style");
-              $(".alert-text").html('');
-              $.each(response.error, function (key, value) {
-                $(".alert-text").append('<span style="display: block">' + value + '</span>');
-              });
-              toastr.error("Please complete your form", 'Failed !');
-            }
-          }, error: function (response) {
-            btnSubmit.removeClass("disabled").html(btnSubmitHtml).removeAttr("disabled");
-            toastr.error(response.responseJSON.message, 'Failed !');
-            $('#modalEdit').modal('hide');
-            $('#modalEdit').find('a[name="id"]').attr('href', '');
           }
         });
       });
