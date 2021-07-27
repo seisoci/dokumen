@@ -40,6 +40,12 @@ class TemplateFormController extends Controller
             ->whereNull('parent_id')
             ->max('sort_order');
         }
+        $multiple = 0;
+        if($request->input('tag') == 'checkbox'){
+          $multiple = $request->input('multiple');
+        }elseif(in_array($request->input('tag'), ['ul', 'ol'])){
+          $multiple = 1;
+        }
 
         $templateForm = TemplateForm::create([
           'template_id' => $request->input('template_id'),
@@ -48,7 +54,7 @@ class TemplateFormController extends Controller
           'type' => $request->input('type'),
           'name' => $request->input('name'),
           'label' => $request->input('label'),
-          'multiple' => $request->input('tag') == 'checkbox' ? $request->input('multiple') : '0',
+          'multiple' => $multiple,
           'sort_order' => $max += 1,
           'is_column_table' => $request->input('is_column_table') ?? '0',
         ]);
@@ -102,10 +108,11 @@ class TemplateFormController extends Controller
         $items['selected'] = $request->input('formoption.selected');
 
         $data = TemplateForm::findOrFail($request->input('id'));
+        $multiple = 0;
         if ($request->input('tag') == 'checkbox') {
-          $multipleCheck = $request->input('multiple');
+          $multiple = $request->input('multiple');
         } else if (in_array($request->input('tag'), ['li', 'ol'])) {
-          $multipleCheck = 1;
+          $multiple = 1;
         }
         $data->selectoption()->delete();
         $data->update([
@@ -114,7 +121,7 @@ class TemplateFormController extends Controller
           'type' => $request->input('type'),
           'name' => $request->input('name'),
           'label' => $request->input('label'),
-          'multiple' => $multipleCheck ?? 0,
+          'multiple' => $multiple,
           'is_column_table' => $request->input('is_column_table') ?? '0',
         ]);
 

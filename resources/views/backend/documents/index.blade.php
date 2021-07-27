@@ -5,6 +5,24 @@
 @section('content')
   <!--begin::Card-->
   <div class="row">
+    <div class="col-md-12 pb-6">
+      <form action="#">
+        <div class="bg-white d-flex justify-content-end p-4">
+          <div class="form-group">
+            <label>Cari Dokumen</label>
+            <div class="input-group">
+              <div class="input-group-prepend">
+              <span class="input-group-text line-height-0 py-0">
+                 <i class="fas fa-search"></i>
+              </span>
+              </div>
+              <input type="text" class="form-control" placeholder="Ketik nama dokumen ... "/>
+              <button type="submit" class="btn btn-primary ml-4">Submit</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
     @foreach($data as $item)
       <div class="col-xl-3">
         <a href="{{ route('documents.show', $item->id) }}">
@@ -35,6 +53,7 @@
       </div>
     @endforeach
   </div>
+
   <div class="bg-white d-flex p-4 flex-column align-items-center rounded">
     <span>Halaman {{ $data->currentPage()}} dari {{ $data->lastPage() }}</span>
     {{ $data->links() }}
@@ -43,14 +62,11 @@
 
 {{-- Styles Section --}}
 @section('styles')
-  <link href="{{ asset('plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css"/>
 @endsection
 
 {{-- Scripts Section --}}
 @section('scripts')
   {{-- vendors --}}
-  <script src="{{ asset('plugins/custom/datatables/datatables.bundle.js') }}" type="text/javascript"></script>
 
   {{-- page scripts --}}
-
 @endsection

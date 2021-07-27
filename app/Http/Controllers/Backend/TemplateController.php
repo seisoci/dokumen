@@ -25,13 +25,13 @@ class TemplateController extends Controller
       return DataTables::of($data)
         ->addColumn('doc', function ($row) {
           return '
-          <a href=' . asset("/template/$row->file") . '><i class="fas fa-2x fa-file-word"></i></a>
+          <a class="btn btn-primary" href=' . asset("/template/$row->file") . '><i class="fas fa-file-word pr-0"></i></a>
           ';
         })
         ->addColumn('action', function ($row) {
           return '
               <div class="btn-group" role="group">
-                  <button id="btnGroupDrop1" type="button" class="btn btn-secondary font-weight-bold dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <button id="btnGroupDrop1" type="button" class="btn btn-primary font-weight-bold dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   <i class="la la-file-text-o"></i>
                   </button>
                   <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
