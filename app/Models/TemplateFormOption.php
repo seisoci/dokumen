@@ -20,6 +20,11 @@ class TemplateFormOption extends Model
     'option_selected',
   ];
 
+  protected $hidden = [
+    'created_at',
+    'updated_at'
+  ];
+
   protected function serializeDate(DateTimeInterface $date)
   {
     return $date->format('Y-m-d H:i');

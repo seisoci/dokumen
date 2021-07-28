@@ -25,4 +25,8 @@ class TemplateData extends Model
   public function templateform(){
     return $this->belongsTo(TemplateForm::class, 'template_form_id');
   }
+
+  public function template(){
+    return $this->belongsTo(Template::class, 'template_id');
+  }
 }

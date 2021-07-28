@@ -13,16 +13,20 @@ use Yajra\DataTables\Facades\DataTables;
 
 class DocumentController extends Controller
 {
-  public function index()
+  public function index(Request $request)
   {
     $config['page_title'] = "Daftar Dokumen";
     $config['page_description'] = "Daftar Dokumen";
     $page_breadcrumbs = [
       ['page' => '#', 'title' => "Daftar Dokumen"],
     ];
-    $data = Template::latest()->paginate(20);
-
-    return view('backend.documents.index', compact('config', 'page_breadcrumbs', 'data'));
+    $search = $request['q'] ?? NULL;
+    $data = Template::when($search, function ($q) use ($search) {
+      return $q->where('name', 'LIKE', "%{$search}%");
+    })
+      ->latest()
+      ->paginate(20);
+    return view('backend.documents.index', compact('config', 'page_breadcrumbs', 'data', 'search'));
   }
 
   public function show($id, Request $request)
@@ -56,7 +60,7 @@ class DocumentController extends Controller
           'pageLength' => '10',
           'ajax' => route('documents.show', $id),
           'column' => [
-              '{ data: "id", name: "id" },',
+            '{ data: "id", name: "id" },',
           ]
         ]
     ];
@@ -111,7 +115,7 @@ class DocumentController extends Controller
                   <i class="la la-file-text-o"></i>
                   </button>
                   <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
-                      <a class="dropdown-item" href="templates/' . $row->id . '">Generate</a>
+                      <a class="dropdown-item" href="'.route('generate.single', $row->id).'">Generate</a>
                       <a class="dropdown-item" href="/documents/' . $id . '/edit?formdataid=' . $row->id . '">Ubah</a>
                       <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalDelete" data-id="' . $row->id . '">Hapus</a>
                   </div>
@@ -352,6 +356,7 @@ class DocumentController extends Controller
       ]);
     } catch (\Throwable $throw) {
       DB::rollBack();
+//      $response = $throw;
       $response = response()->json([
         'status' => 'error',
         'message' => 'Gagal menyimpan data'

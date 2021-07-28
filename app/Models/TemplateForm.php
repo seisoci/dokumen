@@ -50,4 +50,8 @@ class TemplateForm extends Model
   public function formdata(){
     return $this->hasMany(TemplateFormData::class, 'template_form_id');
   }
+
+  public function valuesingle(){
+    return $this->hasOne(TemplateFormData::class, 'template_form_id');
+  }
 }

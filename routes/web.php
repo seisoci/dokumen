@@ -6,6 +6,7 @@ use App\Http\Controllers\Backend\TemplateController;
 use App\Http\Controllers\Backend\TemplateFormController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\DocumentController;
+use App\Http\Controllers\Backend\GenerateController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -43,4 +44,5 @@ Route::middleware('auth:web')->group(function () {
   Route::resource('documents', DocumentController::class)->except(['create', 'store', 'update']);
   Route::post('templateforms/{id}/changehierarchy', [TemplateFormController::class, 'change_hierarchy'])->name('change_hierarchy');
   Route::resource('templateforms', TemplateFormController::class)->except(['index', 'create', 'edit']);
+  Route::get('generatesingle/{id}', [GenerateController::class, 'generatesingle'])->name('generate.single');
 });

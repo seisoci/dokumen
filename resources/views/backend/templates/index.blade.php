@@ -242,6 +242,7 @@
           success: function (response) {
             btnSubmit.removeClass("disabled").html(btnSubmitHtml).removeAttr("disabled");
             if (response.status === "success") {
+              dataTable.draw();
               toastr.success(response.message, 'Success !');
               $('#modalCreate').modal('hide');
               form[0].reset();

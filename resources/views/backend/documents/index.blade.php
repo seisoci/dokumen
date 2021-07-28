@@ -6,17 +6,22 @@
   <!--begin::Card-->
   <div class="row">
     <div class="col-md-12 pb-6">
-      <form action="#">
-        <div class="bg-white d-flex justify-content-end p-4">
-          <div class="form-group">
-            <label>Cari Dokumen</label>
-            <div class="input-group">
-              <div class="input-group-prepend">
+      <form action="{{ route('documents.index') }}" method="GET">
+        <div class="bg-white d-flex justify-content-end p-4 mt-2 pr-10">
+          <div class="row">
+            <div class="col-md-9">
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="input-group-prepend">
               <span class="input-group-text line-height-0 py-0">
                  <i class="fas fa-search"></i>
               </span>
+                  </div>
+                  <input type="text" class="form-control" name="q" placeholder="Ketik nama dokumen ... " value="{{ $search }}"/>
+                </div>
               </div>
-              <input type="text" class="form-control" placeholder="Ketik nama dokumen ... "/>
+            </div>
+            <div class="col-md-3">
               <button type="submit" class="btn btn-primary ml-4">Submit</button>
             </div>
           </div>
