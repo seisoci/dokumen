@@ -24,11 +24,9 @@ class GenerateController extends Controller
       ->whereNull('parent_id')
       ->where('template_id', $templateData->template_id)
       ->get();
-//    dd($templateForm->toArray());
     $filePath = 'template';
     $file = asset($filePath . '/' . $templateData->template->file);
     $this->templateProcessor = new TemplateProcessor($file);
-//    dd($templateForm->toArray());
 
 // Add listitem elements
 //    $section->addListItem('List Item 1', 0);
@@ -53,8 +51,7 @@ class GenerateController extends Controller
     foreach ($templateForm as $item):
       $this->single($item);
     endforeach;
-//    $templateProcessor = new TemplateProcessor('template/Sample_40_TemplateSetComplexValue.docx');
-//
+
 //    $title = new TextRun();
 //    $title->addText('This title has been set ', array('bold' => true, 'italic' => true, 'color' => 'blue'));
 //    $title->addText('dynamically', array('bold' => true, 'italic' => true, 'color' => 'red', 'underline' => 'single'));
@@ -68,34 +65,36 @@ class GenerateController extends Controller
     header('Expires: 0');
     $this->templateProcessor->saveAs('php://output');
     exit();
-//    $templateProcessor->save('php://output');
-//    die();
-//    $templateProcessor->saveAs('Sample_40_TemplateSetComplexValue.docx');
-//    $pathToSave = 'public/kurnia.docx';
   }
 
   public function single($data)
   {
     $templateProcessor = NULL;
     $text = new TextRun();
-    if ($data['tag'] == 'input') {
+    if (in_array($data['tag'], ['input', 'select', 'textarea'])) {
       $templateProcessor = $this->templateProcessor->setValue($data['name'], $data['valuesingle']['value']);
     } elseif ($data['tag'] == 'checkbox') {
-//      foreach ($data['selectoption'] as $item):
-//        if($data['valuesingle']['value'] == $item['option_value']){
-//          $text->addText("🗹 ".$item['option_value']);
-//        }else{
-//          $text->addText("☐ ".$item['option_value']);
-//        }
-//        $text->addText("   ");
-//      endforeach;
-//      $templateProcessor = $this->templateProcessor->setComplexValue($data['name'], $text);
+      $checkbox = (!empty($data['valuesingle']['value']) || isset($data['valuesingle']['value']) ? explode(", ", $data['valuesingle']['value']) : array());
+      foreach ($data['selectoption'] as $item):
+        $checkboxStatus = FALSE;
+        foreach ($checkbox as $checked) {
+          if ($checked == $item['option_value']) {
+            $checkboxStatus = TRUE;
+            break;
+          } else {
+            $checkboxStatus = FALSE;
+          }
+        }
+        $checkboxStatus ? $text->addText("🗹 " . $item['option_value']) : $text->addText("☐ " . $item['option_value']);
+        $text->addText("   ");
+      endforeach;
+      $templateProcessor = $this->templateProcessor->setComplexValue($data['name'], $text);
     } elseif ($data['tag'] == 'radio') {
       foreach ($data['selectoption'] as $item):
-        if($data['valuesingle']['value'] == $item['option_value']){
-          $text->addText("🗹 ".$item['option_value']);
-        }else{
-          $text->addText("☐ ".$item['option_value']);
+        if ($data['valuesingle']['value'] == $item['option_value']) {
+          $text->addText("🗹 " . $item['option_value']);
+        } else {
+          $text->addText("☐ " . $item['option_value']);
         }
         $text->addText("   ");
       endforeach;
@@ -115,7 +114,63 @@ class GenerateController extends Controller
         (count($ul) - 1) == $key ? NULL : $text->addTextBreak(1);
       endforeach;
       $templateProcessor = $this->templateProcessor->setComplexValue($data['name'], $text);
+    } elseif (in_array($data['tag'], ['table', 'block'])) {
+      $array = $this->table($data);
+      $id = $data['children'][0]['name'] ?? NULL;
+      if ($id) {
+        $templateProcessor = $this->templateProcessor->cloneRowAndSetValues($id, $array);
+      }
     }
     return $templateProcessor;
   }
+
+  public function table($data)
+  {
+    $array = array();
+    foreach ($data['children'] as $item):
+      if (in_array($item['tag'], ['input', 'select', 'textarea'])) {
+        foreach ($item['valuemulti'] as $key => $valmulti):
+          $array[$key][$item['name']] = $valmulti['value'];
+        endforeach;
+      } elseif ($item['tag'] == 'checkbox') {
+        foreach ($item['valuemulti'] as $key => $valmulti):
+          $text = NULL;
+          $checkbox = (!empty($valmulti['value']) || isset($valmulti['value']) ? explode(", ", $valmulti['value']) : array());
+          foreach ($item['selectoption'] as $keyOption => $itemOption):
+            $checkboxStatus = FALSE;
+            foreach ($checkbox as $checked) {
+              if ($checked == $itemOption['option_value']) {
+                $checkboxStatus = TRUE;
+                break;
+              } else {
+                $checkboxStatus = FALSE;
+              }
+            }
+            $text .= ($checkboxStatus ? "🗹 " . $itemOption['option_value'] : "☐ " . $itemOption['option_value']);
+            if ((count($item['selectoption']) - 1) != $keyOption) {
+              $text .= '   ';
+            }
+          endforeach;
+          $array[$key][$item['name']] = $text;
+        endforeach;
+      } elseif ($item['tag'] == 'radio') {
+        foreach ($item['valuemulti'] as $key => $valmulti):
+          $text = NULL;
+          foreach ($item['selectoption'] as $keyOption => $itemOption):
+            if ($valmulti['value'] == $itemOption['option_value']) {
+              $text .= "🗹 " . $itemOption['option_value'];
+            } else {
+              $text .= "☐ " . $itemOption['option_value'];
+            }
+            if ((count($item['selectoption']) - 1) != $keyOption) {
+              $text .= '   ';
+            }
+          endforeach;
+          $array[$key][$item['name']] = $text;
+        endforeach;
+      }
+    endforeach;
+    return $array;
+  }
+
 }

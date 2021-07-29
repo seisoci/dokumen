@@ -99,7 +99,7 @@
           </div>
         </div>
         <div class="col-md-6">
-          <form id="formUpdate" action="{{ route('templateforms.update', Request::segment(3)) }}" autocomplete="off">
+          <form id="formUpdate" action="{{ route('templateforms.update', Request::segment(2)) }}" autocomplete="off">
             @method('PUT')
             <div class="card card-table">
               <div class="card-header">
@@ -147,7 +147,7 @@
                       {!! !$edited->parent_id ? "<option value='table' ".($edited->tag == 'table' ? 'selected' : NULL).">Table</option>" : NULL  !!}
                       {!! !$edited->parent_id ? "<option value='ul' ".($edited->tag == 'ul' ? 'selected' : NULL).">Ul</option>" : NULL  !!}
                       {!! !$edited->parent_id ? "<option value='ol' ".($edited->tag == 'ol' ? 'selected' : NULL).">Ol</option>" : NULL  !!}
-                      {!! !$edited->parent_id ? "<option value='block' ".($edited->tag == 'block' ? 'selected' : NULL).">Block</option>" : NULL  !!}
+{{--                      {!! !$edited->parent_id ? "<option value='block' ".($edited->tag == 'block' ? 'selected' : NULL).">Block</option>" : NULL  !!}--}}
                     @endif
                   </select>
                 </div>
@@ -404,10 +404,6 @@
           "text": "Decimal"
         },
         {
-          "val": "file",
-          "text": "File"
-        },
-        {
           "val": "date",
           "text": "Date"
         },
@@ -432,11 +428,11 @@
       $("select[name='tag']").on('change', function () {
         const optionMultiple = ["select", "checkbox", "radio"];
         let tag = $(this).val();
-        $('#isMultiple').css('display', 'none');
+        // $('#isMultiple').css('display', 'none');
         if (optionMultiple.includes(tag)) {
-          if (tag === 'checkbox') {
-            $('#isMultiple').css('display', '');
-          }
+          // if (tag === 'checkbox') {
+          //   $('#isMultiple').css('display', '');
+          // }
           $('#tableOption').css('display', '');
           let $row = $('#items_1');
           $row.find('input[name="formoption[value][]"]').val('');
@@ -449,7 +445,8 @@
           $('#tableOption').css('display', 'none');
         }
         $("select[name='type']").empty();
-        const tableBlock = ["table", "block"];
+        // const tableBlock = ["table", "block"];
+        const tableBlock = ["table"];
         if (tag === 'input') {
           $.each(selectType, function (key, value) {
             $("select[name='type']").append($('<option></option>').val(value.val).text(value.text));
@@ -465,16 +462,16 @@
 
       $("select[name='parent_id']").on('change', function () {
         if (!$(this).val()) {
-          $("select[name='tag']").append($('<option></option>').val('table').text('Table'));
           $("select[name='tag']").append($('<option></option>').val('ul').text('Ul'));
           $("select[name='tag']").append($('<option></option>').val('ol').text('Ol'));
-          $("select[name='tag']").append($('<option></option>').val('block').text('Block'));
+          $("select[name='tag']").append($('<option></option>').val('table').text('Table'));
+          // $("select[name='tag']").append($('<option></option>').val('block').text('Block'));
           $('#viewColumn').css('display', '');
         } else {
           $("select[name='tag'] option[value='table']").remove();
           $("select[name='tag'] option[value='ul']").remove();
           $("select[name='tag'] option[value='ol']").remove();
-          $("select[name='tag'] option[value='block']").remove();
+          // $("select[name='tag'] option[value='block']").remove();
           $('#viewColumn').css('display', 'none');
         }
       });

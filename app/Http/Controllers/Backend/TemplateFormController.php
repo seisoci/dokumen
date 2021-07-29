@@ -141,7 +141,7 @@ class TemplateFormController extends Controller
         $response = response()->json([
           'status' => 'success',
           'message' => 'Data has been saved',
-          'redirect' => "reload",
+          'redirect' => "/templates/{$id}",
         ]);
       } catch (\Throwable $throw) {
         DB::rollBack();

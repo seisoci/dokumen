@@ -12,7 +12,7 @@
           </h3>
         </div>
         <!--begin::Form-->
-        <form id="formUpdate" action="{{ route('users.update', Request::segment(3)) }}">
+        <form id="formUpdate" action="{{ route('users.update', Request::segment(2)) }}">
           <meta name="csrf-token" content="{{ csrf_token() }}">
           @method('PUT')
           <div class="card-body">

@@ -115,7 +115,7 @@ class DocumentController extends Controller
                   <i class="la la-file-text-o"></i>
                   </button>
                   <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
-                      <a class="dropdown-item" href="'.route('generate.single', $row->id).'">Generate</a>
+                      <a class="dropdown-item" href="' . route('generate.single', $row->id) . '">Generate</a>
                       <a class="dropdown-item" href="/documents/' . $id . '/edit?formdataid=' . $row->id . '">Ubah</a>
                       <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalDelete" data-id="' . $row->id . '">Hapus</a>
                   </div>
@@ -643,7 +643,6 @@ class DocumentController extends Controller
     $thead = NULL;
     $html = NULL;
     $jshtml = NULL;
-    $option = NULL;
     $optionjs = NULL;
     $countVal = 0;
     if ($arrayData->count() > 0) {
@@ -718,15 +717,24 @@ class DocumentController extends Controller
           </select>
         ';
         } elseif ($item->tag == 'textarea') {
-          $html = '<textarea class="form-control"  name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" rows="3"></textarea>';
+          $html = '<textarea class="form-control"  name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" rows="3">' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '</textarea>';
           $jshtml = '<textarea class="form-control"  name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" rows="3"></textarea>';
         } elseif ($item->tag == 'checkbox') {
-          $checkboxVal = explode(", ", ($templateFormData->value ?? NULL));
+          $option = NULL;
+          $edited = (isset($query[$index]->value) ? explode(', ', $query[$index]->value) : array());
           foreach ($item->selectoption as $itemCheckbox):
-            $checked = $edit ? (in_array($item->option_value, $checkboxVal) ? 'checked' : NULL) : ($item->option_selected ? 'checked' : NULL);
+            $checkboxStatus = NULL;
+            foreach ($edited as $itemChecked) {
+              if ($itemChecked == $itemCheckbox['option_value']) {
+                $checkboxStatus = 'checked';
+                break;
+              } else {
+                $checkboxStatus = NULL;
+              }
+            }
             $option .= '
             <label class="checkbox">
-                <input type="checkbox" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . $checked . '/>  ' . $itemCheckbox->option_text . '
+                <input type="checkbox" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . $checkboxStatus . '/>  ' . $itemCheckbox->option_text . '
            </label>
           ';
             $optionjs .= '
@@ -738,6 +746,7 @@ class DocumentController extends Controller
           $html = '<div class="checkbox-list">' . $option . '</div>';
           $jshtml = '<div class="checkbox-list">' . $optionjs . '</div>';
         } elseif ($item->tag == 'radio') {
+          $option = NULL;
           $checkboxVal = explode(", ", ($templateFormData->value ?? NULL));
           foreach ($item->selectoption as $itemRadio):
             $checked = $edit ? (in_array($item->option_value, $checkboxVal) ? 'checked' : NULL) : ($item->option_selected ? 'checked' : NULL);
