@@ -166,6 +166,7 @@ class DocumentController extends Controller
 
   public function store($idTemplate, Request $request)
   {
+    dd($request->all());
     $templateForm = TemplateForm::with(['children', 'children.selectoption', 'selectoption'])
       ->whereNull('parent_id')
       ->where('template_id', $idTemplate)

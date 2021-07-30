@@ -6,9 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\TemplateData;
 use App\Models\TemplateForm;
 use App\Models\TemplateFormData;
+use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\Element\ListItem;
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Element\TextRun;
+use ZipArchive;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class GenerateController extends Controller
 {
@@ -65,6 +69,29 @@ class GenerateController extends Controller
     header('Expires: 0');
     $this->templateProcessor->saveAs('php://output');
     exit();
+  }
+
+  public function generatemulti()
+  {
+    $filePath = 'template_temp';
+    Storage::disk('public_upload')->deleteDirectory($filePath.'/*');
+    $zip_file = $filePath.'/invoices.zip';
+    $zip = new ZipArchive();
+    $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+
+    $path = public_path('template');
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
+    foreach ($files as $name => $file) :
+      if (!$file->isDir()) {
+        $filePath = $file->getRealPath();
+//        $relativePath = 'invoices/' . substr($filePath, strlen($path) + 1);
+        $relativePath = substr($filePath, strlen($path) + 1);
+//        dd(substr($filePath, strlen($path) + 1));
+        $zip->addFile($filePath, $relativePath);
+      }
+    endforeach;
+    $zip->close();
+    return response()->download($zip_file);
   }
 
   public function single($data)

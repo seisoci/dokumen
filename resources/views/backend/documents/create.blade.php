@@ -18,9 +18,27 @@
             <div class="row">
               {!! $renderHtml !!}
             </div>
+            <div class="row">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <label>File Browser</label>
+                  <div></div>
+                  <div class="custom-file">
+                    <input type="file" class="custom-file-input" id="avatar" accept=".jpg,.png,.jpeg">
+                    <label class="custom-file-label" for="avatar">Choose file</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-12">
+                <div id="croppie">
+                </div>
+                <input type="hidden" name="kuda" id="inputKuda" value="">
+              </div>
+            </div>
             <div class="card-footer d-flex justify-content-end">
               <button type="button" class="btn btn-secondary mr-2" onclick="window.history.back();">Cancel</button>
-              <button type="submit" class="btn btn-primary">Submit</button>
+              <button type="submit" class="btn btn-primary" id="btnSubmit">Submit</button>
             </div>
           </div>
         </form>
@@ -32,6 +50,7 @@
 
 {{-- Styles Section --}}
 @section('styles')
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css"/>
   <link rel="stylesheet" href="{{ asset('css/backend/datetimepicker/bootstrap-datetimepicker.css') }}" type="text/css">
   <style>
     .table-responsive {
@@ -49,10 +68,30 @@
 @section('scripts')
   {{-- vendors --}}
   <script src="{{ asset('js/backend/datetimepicker/bootstrap-datetimepicker.js') }}" type="text/javascript"></script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.js" type="text/javascript"></script>
   {{-- page scripts --}}
   <script type="text/javascript">
     $(document).ready(function () {
+      let croppie;
+      $('#avatar').on('change', function () {
+        if (this.files && this.files[0]) {
+          let reader = new FileReader();
+          reader.onload = function (e) {
+            $('#croppie').empty().append('<img src="" alt="">');
+            $('#croppie img').attr('src', e.target.result);
+            croppie = new Croppie($('#croppie img')[0], {
+              boundary: {width: 300, height: 200},
+              viewport: {width: 250, height: 50, type: 'square'},
+              showZoomer: true,
+              enableResize: true,
+              enableOrientation: true,
+              mouseWheelZoom: 'ctrl'
+            })
+          }
+          reader.readAsDataURL(this.files[0]);
+        }
+      })
+
       function initType() {
         $(".decimal").inputmask('decimal', {
           groupSeparator: '.',
@@ -85,35 +124,12 @@
       initType();
       {!! $renderJs !!}
 
-      // $(".add").on('click', function () {
-      //   let total_items = $(".items").length;
-      //   let lastid = $(".items:last").attr("id");
-      //   let split_id = lastid.split("_");
-      //   let nextindex = Number(split_id[1]) + 1;
-      //   let max = 100;
-      //   if (total_items < max) {
-      //     $(".items:last").after("<tr class='items' id='items_" + nextindex + "'></tr>");
-      //     $("#items_" + nextindex).append(
-      //       "<td><button type='button' id='items_" + nextindex + "' class='btn btn-block btn-danger rmItems'>-</button></td>" +
-      //       '<td><input type="text" name="formoption[value][]" class="form-control"/></td>' +
-      //       '<td><input type="text" name="formoption[text][]" class="form-control"/></td>' +
-      //       '<td class="d-flex justify-content-center align-items-center">' +
-      //       '<div class="form-control" style="border: none">' +
-      //       '<input type="checkbox" name="formoption[selected][]" class="w-20px h-20px yes" value="1">' +
-      //       '<input type="checkbox" name="formoption[selected][]" value="0" checked class="no" style="display: none">' +
-      //       '</div>' +
-      //       '</td>'
-      //     );
-      //   }
-      //   // initSelected();
-      // });
-
-      // $('tbody').on('click', '.rmItems', function () {
-      //   let id = this.id;
-      //   let split_id = id.split("_");
-      //   let deleteindex = split_id[1];
-      //   $("#items_" + deleteindex).remove();
-      // });
+      $('#btnSubmit').click(function () {
+        croppie.result({type: 'base64', circle: false})
+          .then(function (dataImg) {
+            $('#inputKuda').val(dataImg);
+          });
+      });
 
       $("#formStore").submit(function (e) {
         e.preventDefault();
@@ -121,7 +137,7 @@
         let btnSubmit = form.find("[type='submit']");
         let btnSubmitHtml = btnSubmit.html();
         let url = form.attr("action");
-        let data = new FormData(this);
+        let formData = new FormData(this);
         $.ajax({
           beforeSend: function () {
             btnSubmit.addClass("disabled").html("<i class='fa fa-spinner fa-pulse fa-fw'></i> Loading ...").prop("disabled", "disabled");
@@ -131,7 +147,7 @@
           contentType: false,
           type: "POST",
           url: url,
-          data: data,
+          data: formData,
           success: function (response) {
             btnSubmit.removeClass("disabled").html(btnSubmitHtml).removeAttr("disabled");
             if (response.status === "success") {
