@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TemplateData;
 use App\Models\TemplateForm;
 use App\Models\TemplateFormData;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\Element\ListItem;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -27,6 +28,7 @@ class GenerateController extends Controller
     }])
       ->whereNull('parent_id')
       ->where('template_id', $templateData->template_id)
+      ->orderBy('sort_order', 'asc')
       ->get();
     $filePath = 'template';
     $file = asset($filePath . '/' . $templateData->template->file);
@@ -74,8 +76,8 @@ class GenerateController extends Controller
   public function generatemulti()
   {
     $filePath = 'template_temp';
-    Storage::disk('public_upload')->deleteDirectory($filePath.'/*');
-    $zip_file = $filePath.'/invoices.zip';
+    Storage::disk('public_upload')->deleteDirectory($filePath . '/*');
+    $zip_file = $filePath . '/invoices.zip';
     $zip = new ZipArchive();
     $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
 
@@ -96,10 +98,18 @@ class GenerateController extends Controller
 
   public function single($data)
   {
+    $imgPath = public_path('template_image');
     $templateProcessor = NULL;
     $text = new TextRun();
     if (in_array($data['tag'], ['input', 'select', 'textarea'])) {
-      $templateProcessor = $this->templateProcessor->setValue($data['name'], $data['valuesingle']['value']);
+      if ($data['type'] == 'image') {
+        if ($data['valuesingle']['value']) {
+          list($width, $height) = getimagesize($imgPath . '/' . $data['valuesingle']['value']);
+          $templateProcessor = $this->templateProcessor->setImageValue($data['name'], array('path' => $imgPath . '/' . $data['valuesingle']['value'], 'width' => $width, 'height' => $height));
+        }
+      } else {
+        $templateProcessor = $this->templateProcessor->setValue($data['name'], $data['valuesingle']['value'] ?? NULL);
+      }
     } elseif ($data['tag'] == 'checkbox') {
       $checkbox = (!empty($data['valuesingle']['value']) || isset($data['valuesingle']['value']) ? explode(", ", $data['valuesingle']['value']) : array());
       foreach ($data['selectoption'] as $item):
@@ -144,7 +154,7 @@ class GenerateController extends Controller
     } elseif (in_array($data['tag'], ['table', 'block'])) {
       $array = $this->table($data);
       $id = $data['children'][0]['name'] ?? NULL;
-      if ($id) {
+      if ($id && $array) {
         $templateProcessor = $this->templateProcessor->cloneRowAndSetValues($id, $array);
       }
     }
@@ -157,7 +167,7 @@ class GenerateController extends Controller
     foreach ($data['children'] as $item):
       if (in_array($item['tag'], ['input', 'select', 'textarea'])) {
         foreach ($item['valuemulti'] as $key => $valmulti):
-          $array[$key][$item['name']] = $valmulti['value'];
+          $array[$key][$item['name']] = $valmulti['value'] ?? NULL;
         endforeach;
       } elseif ($item['tag'] == 'checkbox') {
         foreach ($item['valuemulti'] as $key => $valmulti):

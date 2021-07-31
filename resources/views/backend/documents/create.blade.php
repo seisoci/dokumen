@@ -18,27 +18,9 @@
             <div class="row">
               {!! $renderHtml !!}
             </div>
-            <div class="row">
-              <div class="col-md-12">
-                <div class="form-group">
-                  <label>File Browser</label>
-                  <div></div>
-                  <div class="custom-file">
-                    <input type="file" class="custom-file-input" id="avatar" accept=".jpg,.png,.jpeg">
-                    <label class="custom-file-label" for="avatar">Choose file</label>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-12">
-                <div id="croppie">
-                </div>
-                <input type="hidden" name="kuda" id="inputKuda" value="">
-              </div>
-            </div>
             <div class="card-footer d-flex justify-content-end">
               <button type="button" class="btn btn-secondary mr-2" onclick="window.history.back();">Cancel</button>
-              <button type="submit" class="btn btn-primary" id="btnSubmit">Submit</button>
+              <button type="submit" class="btn btn-primary btnSubmit">Submit</button>
             </div>
           </div>
         </form>
@@ -50,13 +32,9 @@
 
 {{-- Styles Section --}}
 @section('styles')
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css"/>
+  <link rel="stylesheet" href="{{ asset('css/backend/croppie/croppie.min.css') }}"/>
   <link rel="stylesheet" href="{{ asset('css/backend/datetimepicker/bootstrap-datetimepicker.css') }}" type="text/css">
   <style>
-    .table-responsive {
-      overflow-x: inherit;
-    }
-
     .table td {
       position: relative !important;
 
@@ -67,31 +45,11 @@
 {{-- Scripts Section --}}
 @section('scripts')
   {{-- vendors --}}
+  <script src="{{ asset('js/backend/croppie/croppie.min.js') }}" type="text/javascript"></script>
   <script src="{{ asset('js/backend/datetimepicker/bootstrap-datetimepicker.js') }}" type="text/javascript"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.js" type="text/javascript"></script>
   {{-- page scripts --}}
   <script type="text/javascript">
     $(document).ready(function () {
-      let croppie;
-      $('#avatar').on('change', function () {
-        if (this.files && this.files[0]) {
-          let reader = new FileReader();
-          reader.onload = function (e) {
-            $('#croppie').empty().append('<img src="" alt="">');
-            $('#croppie img').attr('src', e.target.result);
-            croppie = new Croppie($('#croppie img')[0], {
-              boundary: {width: 300, height: 200},
-              viewport: {width: 250, height: 50, type: 'square'},
-              showZoomer: true,
-              enableResize: true,
-              enableOrientation: true,
-              mouseWheelZoom: 'ctrl'
-            })
-          }
-          reader.readAsDataURL(this.files[0]);
-        }
-      })
-
       function initType() {
         $(".decimal").inputmask('decimal', {
           groupSeparator: '.',
@@ -123,13 +81,6 @@
 
       initType();
       {!! $renderJs !!}
-
-      $('#btnSubmit').click(function () {
-        croppie.result({type: 'base64', circle: false})
-          .then(function (dataImg) {
-            $('#inputKuda').val(dataImg);
-          });
-      });
 
       $("#formStore").submit(function (e) {
         e.preventDefault();

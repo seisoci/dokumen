@@ -34,6 +34,7 @@
 
 {{-- Styles Section --}}
 @section('styles')
+  <link rel="stylesheet" href="{{ asset('css/backend/croppie/croppie.min.css') }}"/>
   <link rel="stylesheet" href="{{ asset('css/backend/datetimepicker/bootstrap-datetimepicker.css') }}" type="text/css">
   <style>
     .table-responsive {
@@ -50,6 +51,7 @@
 {{-- Scripts Section --}}
 @section('scripts')
   {{-- vendors --}}
+  <script src="{{ asset('js/backend/croppie/croppie.min.js') }}" type="text/javascript"></script>
   <script src="{{ asset('js/backend/datetimepicker/bootstrap-datetimepicker.js') }}" type="text/javascript"></script>
 
   {{-- page scripts --}}

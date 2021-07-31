@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Facades\Fileupload;
 use App\Http\Controllers\Controller;
 use App\Models\Template;
 use App\Models\TemplateData;
@@ -166,7 +167,6 @@ class DocumentController extends Controller
 
   public function store($idTemplate, Request $request)
   {
-    dd($request->all());
     $templateForm = TemplateForm::with(['children', 'children.selectoption', 'selectoption'])
       ->whereNull('parent_id')
       ->where('template_id', $idTemplate)
@@ -181,11 +181,20 @@ class DocumentController extends Controller
       foreach ($templateForm as $itemParent):
         if (!in_array($itemParent->tag, ['table', 'block'])) {
           if ($request->input($itemParent->name) && !in_array($itemParent->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
-            TemplateFormData::create([
-              'template_data_id' => $templateData->id,
-              'template_form_id' => $itemParent->id,
-              'value' => $request->input($itemParent->name)
-            ]);
+            if($itemParent->type == 'image'){
+              $fileName = Fileupload::uploadImagePublic($request->input($itemParent->name), NULL, NULL,NULL,  NULL, "base64");
+              TemplateFormData::create([
+                'template_data_id' => $templateData->id,
+                'template_form_id' => $itemParent->id,
+                'value' => $fileName
+              ]);
+            }else {
+              TemplateFormData::create([
+                'template_data_id' => $templateData->id,
+                'template_form_id' => $itemParent->id,
+                'value' => $request->input($itemParent->name)
+              ]);
+            }
           elseif ($request->input($itemParent->name) && in_array($itemParent->tag, ['checkbox', 'ul', 'ol'])):
             if (!$itemParent->multiple) {
               TemplateFormData::create([
@@ -203,7 +212,7 @@ class DocumentController extends Controller
           endif;
         } elseif (in_array($itemParent->tag, ['table', 'block'])) {
           foreach ($itemParent->children as $itemChild):
-            $childrenForm = array_values($request[$itemParent->name]);
+            $childrenForm = $request[$itemParent->name] ? array_values($request[$itemParent->name]) : array();
             foreach ($childrenForm as $item):
               if (!in_array($itemChild->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
                 TemplateFormData::create([
@@ -238,10 +247,11 @@ class DocumentController extends Controller
       ]);
     } catch (\Throwable $throw) {
       DB::rollBack();
-      $response = response()->json([
-        'status' => 'error',
-        'message' => 'Gagal menyimpan data'
-      ]);
+      $response = $throw;
+//      $response = response()->json([
+//        'status' => 'error',
+//        'message' => 'Gagal menyimpan data'
+//      ]);
     }
     return $response;
   }
@@ -467,11 +477,49 @@ class DocumentController extends Controller
         $render['html'] = '
           <div class="col-md-6">
             <div class="form-group">
-              <label>' . $label . '</label>
-              <input type="text" class="form-control" name="' . $name . '" accept=".jpg,.png,.jpeg">
+              <label>Upload Gambar '.$label.'</label>
+              <div></div>
+              <div class="custom-file">
+                <input type="file" class="custom-file-input" id="file'.$name.'" accept=".jpg,.png,.jpeg" required>
+                <label class="custom-file-label" for="file'.$name.'">Pilih gambar '.$label.'</label>
+              </div>
             </div>
           </div>
+          <div class="col-md-6">
+            <div id="croppie'.$name.'">
+            </div>
+            <input type="hidden" name="'.$name.'">
+          </div>
         ';
+
+        $render['js'] = '
+          let croppie'.$name.';
+          $("#file'.$name.'").on("change", function () {
+            if (this.files && this.files[0]) {
+              let reader = new FileReader();
+              reader.onload = function (e) {
+                $("#croppie'.$name.'").empty().append("'.sprintf('%s',"<img src=''>").'");
+                $("#croppie'.$name.' img").attr("src", e.target.result);
+                croppie'.$name.' = new Croppie($("#croppie'.$name.' img")[0], {
+                  boundary: {width: 300, height: 150},
+                  viewport: {width: 270, height: 130, type: "square"},
+                  showZoomer: true,
+                  enableResize: true,
+                  mouseWheelZoom: "ctrl"
+                })
+              }
+              reader.readAsDataURL(this.files[0]);
+            }
+          });
+          $(".btnSubmit").click(function () {
+            if(croppie'.$name.'){
+              croppie'.$name.'.result({type: "base64", size: "original", circle: false})
+                .then(function (dataImg) {
+                $("input[name='.$name.'").val(dataImg);
+              });
+            }
+          });
+          ';
       } elseif ($type == 'currency') {
         $render['html'] = '
           <div class="col-md-6">
@@ -596,7 +644,7 @@ class DocumentController extends Controller
                        </th>
                         <th>' . $label . '</th>
                      </tr>
-                     </thead>
+                  </thead>
                   <tbody>
                     ' . $buildTable . '
                   </tbody>
@@ -629,7 +677,6 @@ class DocumentController extends Controller
             $("#' . $name . '_"  + deleteindex).remove();
             initType();
           });
-
           ';
     } else {
       $render['html'] = NULL;
