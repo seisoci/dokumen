@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\TemplateData;
 use App\Models\TemplateForm;
 use App\Models\TemplateFormData;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\Element\ListItem;
@@ -18,7 +20,6 @@ use RecursiveIteratorIterator;
 class GenerateController extends Controller
 {
   private $templateProcessor;
-
 
   public function generatesingle($id)
   {
@@ -34,61 +35,61 @@ class GenerateController extends Controller
     $file = asset($filePath . '/' . $templateData->template->file);
     $this->templateProcessor = new TemplateProcessor($file);
 
-// Add listitem elements
-//    $section->addListItem('List Item 1', 0);
-//    $section->addListItem('List Item 2', 0);
-//    $section->addListItem('List Item 3', 0);
-//    $this->templateProcessor->setComplexValue('list', $section);
-
-//    $replacements = array(
-//      array('customer_name' => 'Batman', 'customer_address' => 'Gotham City'),
-//      array('customer_name' => 'Superman', 'customer_address' => 'Metropolis'),
-//    );
-
-//    $this->templateProcessor->cloneBlock('list', 0, true, false, $replacements);
-
-    $text = new TextRun();
-    $text->addText('• List item 1');
-    $text->addTextBreak(1);
-    $text->addText('• List item 2');
-    $text->addTextBreak(1);
-    $this->templateProcessor->setComplexValue('list', $text);
-
     foreach ($templateForm as $item):
       $this->single($item);
     endforeach;
 
-//    $title = new TextRun();
-//    $title->addText('This title has been set ', array('bold' => true, 'italic' => true, 'color' => 'blue'));
-//    $title->addText('dynamically', array('bold' => true, 'italic' => true, 'color' => 'red', 'underline' => 'single'));
-//    $templateProcessor->setComplexBlock('title', $title);
-//    $templateProcessor->setValue('nama', 'John Doe');
-//
+    $fileName = Carbon::today()->toDateString() . '_' . $templateData->template->file;
     header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
     header('Content-Type: application/octet-stream');
-    header("Content-Disposition: attachment; filename=myFile.docx");
+    header("Content-Disposition: attachment; filename=$fileName");
     header("Content-Transfer-Encoding: binary");
     header('Expires: 0');
     $this->templateProcessor->saveAs('php://output');
     exit();
   }
 
-  public function generatemulti()
+  public function generatemulti(Request $request)
   {
     $filePath = 'template_temp';
     Storage::disk('public_upload')->deleteDirectory($filePath . '/*');
     $zip_file = $filePath . '/invoices.zip';
     $zip = new ZipArchive();
     $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    $data = $request->data;
 
-    $path = public_path('template');
-    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
-    foreach ($files as $name => $file) :
+    $saveto = public_path('template_temp');
+    foreach ($data as $item) {
+      $random = rand();
+      $templateData = TemplateData::with('template')->findOrFail($item);
+      $templateForm = TemplateForm::with(['children', 'selectoption', 'valuesingle' => function ($q) use ($item) {
+        $q->where('template_data_id', $item);
+      }])
+        ->whereNull('parent_id')
+        ->where('template_id', $templateData->template_id)
+        ->orderBy('sort_order', 'asc')
+        ->get();
+      $filePathSingle = 'template';
+      $file = asset($filePathSingle . '/' . $templateData->template->file);
+      $this->templateProcessor = new TemplateProcessor($file);
+
+      foreach ($templateForm as $itemForm):
+        $this->single($itemForm);
+      endforeach;
+
+      $fileName = $random . '_' . $templateData->template->file;
+      header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+      header('Content-Type: application/octet-stream');
+      header("Content-Disposition: attachment; filename=$fileName");
+      header("Content-Transfer-Encoding: binary");
+      header('Expires: 0');
+      $this->templateProcessor->saveAs($saveto.'\\'.$fileName);
+    }
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($saveto));
+    foreach ($files as $file) :
       if (!$file->isDir()) {
         $filePath = $file->getRealPath();
-//        $relativePath = 'invoices/' . substr($filePath, strlen($path) + 1);
-        $relativePath = substr($filePath, strlen($path) + 1);
-//        dd(substr($filePath, strlen($path) + 1));
+        $relativePath = substr($filePath, strlen($saveto) + 1);
         $zip->addFile($filePath, $relativePath);
       }
     endforeach;
@@ -155,7 +156,11 @@ class GenerateController extends Controller
       $array = $this->table($data);
       $id = $data['children'][0]['name'] ?? NULL;
       if ($id && $array) {
-        $templateProcessor = $this->templateProcessor->cloneRowAndSetValues($id, $array);
+        try {
+          $templateProcessor = $this->templateProcessor->cloneRowAndSetValues($id, $array);
+        } catch (\Exception $e) {
+          error_log(0);
+        }
       }
     }
     return $templateProcessor;

@@ -82,6 +82,37 @@
       initType();
       {!! $renderJs !!}
 
+      //   let croopie = {};
+      // $(".je_photo").on("change", function () {
+      //   let photo = $(this);
+      //   if (this.files && this.files[0]) {
+      //     let reader = new FileReader();
+      //     reader.onload = function (e) {
+      //       photo.parent().parent().find(".croppie_image").empty().append("<img src=''>")
+      //       photo.parent().parent().find(".croppie_image img").attr("src", e.target.result);
+      //       let id = photo.attr('id');
+      //         croopie[id] = new Croppie($(".croppie_image img")[0], {
+      //         boundary: {width: 300, height: 150},
+      //         viewport: {width: 270, height: 130, type: "square"},
+      //         showZoomer: true,
+      //         enableResize: true,
+      //         mouseWheelZoom: "ctrl"
+      //       });
+      //     }
+      //     reader.readAsDataURL(this.files[0]);
+      //   }
+      // });
+      //
+      // $(".btnSubmit").click(function () {
+      //   console.log(croppieje_photo[1]);
+      //   Object.keys(croppieje_photo).forEach(function(key){
+      //     croppieje_photo[key].result({type: "base64", size: "original", circle: false})
+      //       .then(function (dataImg) {
+      //         $("input[name='pengalaman_kerja[1][je_photo]']").val(dataImg);
+      //       });
+      //   });
+      // });
+
       $("#formStore").submit(function (e) {
         e.preventDefault();
         let form = $(this);

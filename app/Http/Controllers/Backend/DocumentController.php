@@ -181,14 +181,14 @@ class DocumentController extends Controller
       foreach ($templateForm as $itemParent):
         if (!in_array($itemParent->tag, ['table', 'block'])) {
           if ($request->input($itemParent->name) && !in_array($itemParent->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
-            if($itemParent->type == 'image'){
-              $fileName = Fileupload::uploadImagePublic($request->input($itemParent->name), NULL, NULL,NULL,  NULL, "base64");
+            if ($itemParent->type == 'image') {
+              $fileName = $request->input($itemParent->name) ? Fileupload::uploadImagePublic($request->input($itemParent->name), NULL, NULL, NULL, NULL, "base64") : NULL;
               TemplateFormData::create([
                 'template_data_id' => $templateData->id,
                 'template_form_id' => $itemParent->id,
                 'value' => $fileName
               ]);
-            }else {
+            } else {
               TemplateFormData::create([
                 'template_data_id' => $templateData->id,
                 'template_form_id' => $itemParent->id,
@@ -206,7 +206,7 @@ class DocumentController extends Controller
               TemplateFormData::create([
                 'template_data_id' => $templateData->id,
                 'template_form_id' => $itemParent->id,
-                'value' => implode(", ", $request->input($itemParent->name))
+                'value' => isset($item[$itemParent->name]) ? implode(", ", $item[$itemParent->name]) : NULL
               ]);
             }
           endif;
@@ -215,12 +215,22 @@ class DocumentController extends Controller
             $childrenForm = $request[$itemParent->name] ? array_values($request[$itemParent->name]) : array();
             foreach ($childrenForm as $item):
               if (!in_array($itemChild->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
-                TemplateFormData::create([
-                  'template_data_id' => $templateData->id,
-                  'template_form_id' => $itemChild->id,
-                  'value' => $item[$itemChild->name] ?? NULL
-                ]);
+                if ($itemChild->type == 'image') {
+                  $fileName = $item[$itemChild->name] ? Fileupload::uploadImagePublic($item[$itemChild->name], NULL, NULL, NULL, NULL, "base64") : NULL;
+                  TemplateFormData::create([
+                    'template_data_id' => $templateData->id,
+                    'template_form_id' => $itemChild->id,
+                    'value' => $fileName
+                  ]);
+                } else {
+                  TemplateFormData::create([
+                    'template_data_id' => $templateData->id,
+                    'template_form_id' => $itemChild->id,
+                    'value' => $item[$itemChild->name] ?? NULL
+                  ]);
+                }
               elseif (in_array($itemChild->tag, ['checkbox', 'ul', 'ol'])):
+
                 if (!$itemChild->multiple) {
                   TemplateFormData::create([
                     'template_data_id' => $templateData->id,
@@ -231,7 +241,7 @@ class DocumentController extends Controller
                   TemplateFormData::create([
                     'template_data_id' => $templateData->id,
                     'template_form_id' => $itemChild->id,
-                    'value' => implode(", ", $item[$itemChild->name]) ?? NULL
+                    'value' => isset($item[$itemChild->name]) ? implode(", ", $item[$itemChild->name]) : NULL
                   ]);
                 }
               endif;
@@ -248,10 +258,10 @@ class DocumentController extends Controller
     } catch (\Throwable $throw) {
       DB::rollBack();
       $response = $throw;
-//      $response = response()->json([
-//        'status' => 'error',
-//        'message' => 'Gagal menyimpan data'
-//      ]);
+      $response = response()->json([
+        'status' => 'error',
+        'message' => 'Gagal menyimpan data'
+      ]);
     }
     return $response;
   }
@@ -278,17 +288,18 @@ class DocumentController extends Controller
     $renderJs = NULL;
     foreach ($templateForm as $item):
       if (in_array($item->tag, $arrayList)) {
-        $renderHtml .= $this->render($item->id, $item->tag, $item->type, $item->name, $item->label, $item->selectoption, $item->multiple, $item->name, FALSE, $id, $templateDataId, TRUE)['html'];
-        $renderJs .= $this->render($item->id, $item->tag, $item->type, $item->name, $item->label, $item->selectoption, $item->multiple, $item->name)['js'] ?? NULL;
+        $render = $this->render($item->id, $item->tag, $item->type, $item->name, $item->label, $item->selectoption, $item->multiple, $item->name, FALSE, $id, $templateDataId, TRUE);
+        $renderHtml .= $render['html'] ?? NULL;
+        $renderJs .= $render['js'] ?? NULL;
       } elseif ($item->tag == 'table' || $item->tag == 'block') {
         $renderHtml .= $this->render($item->id, $item->tag, $item->type, $item->name, $item->label, $item->children, $item->multiple, $item->name, FALSE, $id, $templateDataId, TRUE)['html'];
         $renderJs .= $this->render($item->id, $item->tag, $item->type, $item->name, $item->label, $item->children, $item->multiple, $item->name)['js'] ?? NULL;
       } else {
-        $renderHtml .= $this->render($item->id, $item->tag, $item->type, $item->name, $item->label, array(), $item->multiple, $item->name, FALSE, $id, $templateDataId, TRUE)['html'] ?? NULL;
-        $renderJs .= $this->render($item->id, $item->tag, $item->type, $item->name, $item->label, array(), $item->multiple, $item->name)['js'] ?? NULL;
+        $render = $this->render($item->id, $item->tag, $item->type, $item->name, $item->label, array(), $item->multiple, $item->name, FALSE, $id, $templateDataId, TRUE);
+        $renderHtml .= $render['html'] ?? NULL;
+        $renderJs .= $render['js'] ?? NULL;
       }
     endforeach;
-
     return view('backend.documents.edit', compact('config', 'page_breadcrumbs', 'templateDataId', 'renderHtml', 'renderJs'));
   }
 
@@ -306,12 +317,26 @@ class DocumentController extends Controller
       foreach ($templateForm as $itemParent):
         if (!in_array($itemParent->tag, ['table', 'block'])) {
           if ($request->input($itemParent->name) && !in_array($itemParent->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
-            TemplateFormData::updateOrCreate([
-              'template_data_id' => $templateData->id,
-              'template_form_id' => $itemParent->id,
-            ], [
-              'value' => $request->input($itemParent->name)
-            ]);
+            if ($itemParent->type == 'image') {
+              $fileName = $request->input($itemParent->name) ? Fileupload::uploadImagePublic($request->input($itemParent->name), NULL, NULL, NULL, NULL, "base64") : NULL;
+              $deletedData =TemplateFormData::where('template_data_id', $templateData->id)->where('template_form_id', $itemParent->id )->first();
+              Fileupload::deleteTemplateImage($deletedData->value);
+              if($fileName){
+                TemplateFormData::updateOrCreate([
+                  'template_data_id' => $templateData->id,
+                  'template_form_id' => $itemParent->id,
+                ], [
+                  'value' => $fileName
+                ]);
+              }
+            } else {
+              TemplateFormData::updateOrCreate([
+                'template_data_id' => $templateData->id,
+                'template_form_id' => $itemParent->id,
+              ], [
+                'value' => $request->input($itemParent->name)
+              ]);
+            }
           elseif ($request->input($itemParent->name) && in_array($itemParent->tag, ['checkbox', 'ul', 'ol'])):
             if (!$itemParent->multiple) {
               TemplateFormData::updateOrCreate([
@@ -325,7 +350,7 @@ class DocumentController extends Controller
                 'template_data_id' => $templateData->id,
                 'template_form_id' => $itemParent->id,
               ], [
-                'value' => implode(", ", $request->input($itemParent->name))
+              'value' => isset($request[$itemParent->name]) ? implode(", ", $request[$itemParent->name]) : NULL
               ]);
             }
           endif;
@@ -351,7 +376,7 @@ class DocumentController extends Controller
                   TemplateFormData::create([
                     'template_data_id' => $templateData->id,
                     'template_form_id' => $itemChild->id,
-                    'value' => implode(", ", $item[$itemChild->name]) ?? NULL
+                    'value' => isset($request[$itemChild->name]) ? implode(", ", $request[$itemChild->name]) : NULL
                   ]);
                 }
               endif;
@@ -367,11 +392,11 @@ class DocumentController extends Controller
       ]);
     } catch (\Throwable $throw) {
       DB::rollBack();
-//      $response = $throw;
-      $response = response()->json([
-        'status' => 'error',
-        'message' => 'Gagal menyimpan data'
-      ]);
+      $response = $throw;
+//      $response = response()->json([
+//        'status' => 'error',
+//        'message' => 'Gagal menyimpan data'
+//      ]);
     }
     return $response;
   }
@@ -383,6 +408,11 @@ class DocumentController extends Controller
       'message' => 'Gagal menghapus data',
     ]);
     $data = TemplateData::findOrFail($id);
+    $templateFormData = TemplateFormData::where('template_data_id', $id)->get();
+    foreach ($templateFormData as $item) {
+      Fileupload::deleteTemplateImage($item->value);
+    }
+
     if ($data->delete()) {
       $response = response()->json([
         'status' => 'success',
@@ -394,6 +424,7 @@ class DocumentController extends Controller
 
   public function render($id = NULL, $tag, $type, $name, $label, $arrayData = array(), $multiple = FALSE, $tableName = NULL, $tableChild = FALSE, $templateId = 0, $formDataId = 0, $edit = FALSE)
   {
+    $formDataIdSingle = $formDataId;
     $select = NULL;
     $columns = [];
     if ($tag != 'table') {
@@ -469,38 +500,38 @@ class DocumentController extends Controller
           <div class="col-md-6">
             <div class="form-group">
               <label>' . $label . '</label>
-              <input type="text" name="' . $name . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" />
+              <input type="text" name="' . $name . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" value="' . ($templateFormData->value ?? NULL) . '"/>
             </div>
           </div>
         ';
       } elseif ($type == 'image') {
+        $imgUrl = $templateFormData->value ? asset('template_image').'/'.($templateFormData->value ?? NULL) : ($templateFormData->value ?? NULL);
         $render['html'] = '
           <div class="col-md-6">
             <div class="form-group">
-              <label>Upload Gambar '.$label.'</label>
+              <label>Upload Gambar ' . $label . '</label>
               <div></div>
               <div class="custom-file">
-                <input type="file" class="custom-file-input" id="file'.$name.'" accept=".jpg,.png,.jpeg" required>
-                <label class="custom-file-label" for="file'.$name.'">Pilih gambar '.$label.'</label>
+                <input type="file" class="custom-file-input" id="file' . $name . '" accept=".jpg,.png,.jpeg" required>
+                <label class="custom-file-label" for="file' . $name . '">Pilih gambar ' . $label . '</label>
               </div>
             </div>
           </div>
           <div class="col-md-6">
-            <div id="croppie'.$name.'">
+            <div id="croppie' . $name . '">
+                <img src="'.$imgUrl.'" width="400px" height="200px">
             </div>
-            <input type="hidden" name="'.$name.'">
-          </div>
-        ';
-
+            <input type="hidden" name="' . $name . '">
+          </div>';
         $render['js'] = '
-          let croppie'.$name.';
-          $("#file'.$name.'").on("change", function () {
+          let croppie' . $name . ';
+          $("#file' . $name . '").on("change", function () {
             if (this.files && this.files[0]) {
               let reader = new FileReader();
               reader.onload = function (e) {
-                $("#croppie'.$name.'").empty().append("'.sprintf('%s',"<img src=''>").'");
-                $("#croppie'.$name.' img").attr("src", e.target.result);
-                croppie'.$name.' = new Croppie($("#croppie'.$name.' img")[0], {
+                $("#croppie' . $name . '").empty().append("' . sprintf('%s', "<img src=''>") . '");
+                $("#croppie' . $name . ' img").attr("src", e.target.result);
+                croppie' . $name . ' = new Croppie($("#croppie' . $name . ' img")[0], {
                   boundary: {width: 300, height: 150},
                   viewport: {width: 270, height: 130, type: "square"},
                   showZoomer: true,
@@ -512,10 +543,10 @@ class DocumentController extends Controller
             }
           });
           $(".btnSubmit").click(function () {
-            if(croppie'.$name.'){
-              croppie'.$name.'.result({type: "base64", size: "original", circle: false})
+            if(croppie' . $name . '){
+              croppie' . $name . '.result({type: "base64", size: "original", circle: false})
                 .then(function (dataImg) {
-                $("input[name='.$name.'").val(dataImg);
+                $("input[name=' . $name . '").val(dataImg);
               });
             }
           });
@@ -610,8 +641,12 @@ class DocumentController extends Controller
         </div>
       ';
     } elseif ($tag == 'table' || $tag == 'block') {
-      $render['html'] = $this->tablerender($tag, $type, $name, $label, $arrayData, $templateId, $formDataId, $edit)['html'] ?? NULL;
-      $render['js'] = $this->tablerender($tag, $type, $name, $label, $arrayData)['js'] ?? NULL;
+      $tableRender = $this->tablerender($name, $label, $arrayData, $formDataIdSingle, $edit);
+      $render['html'] = $tableRender['html'] ?? NULL;
+      $render['js'] = $tableRender['js'] ?? NULL;
+//      $render['html'] = $this->tablerender($name, $label, $arrayData, $formDataIdSingle, $edit)['html'] ?? NULL;
+//      $render['js'] = $this->tablerender($name, $label, $arrayData, $formDataIdSingle, $edit)['js'] ?? NULL;
+
     } elseif ($tag == 'ul' || $tag == 'ol') {
       $buildTable = NULL;
       if ($edit) {
@@ -684,7 +719,7 @@ class DocumentController extends Controller
     return $render;
   }
 
-  public function tablerender($tag, $type, $name, $label, $arrayData = array(), $templateId = 0, $formDataId = 0, $edit = FALSE, $tableId = 0)
+  public function tablerender($name, $label, $arrayData = array(), $formDataId = 0, $edit = FALSE)
   {
     $buildTable = NULL;
     $jsInput = NULL;
@@ -693,6 +728,9 @@ class DocumentController extends Controller
     $jshtml = NULL;
     $optionjs = NULL;
     $countVal = 0;
+    $js = NULL;
+    $initjs = NULL;
+    $jsEditCroppie = NULL;
     if ($arrayData->count() > 0) {
       $countVal = TemplateFormData::leftJoin('template_data', 'template_data.id', '=', 'template_form_data.template_data_id')
         ->leftJoin('template_forms', 'template_forms.id', '=', 'template_form_data.id')
@@ -720,26 +758,68 @@ class DocumentController extends Controller
         $buildTable .= '<td>';
         if ($item->tag === 'input') {
           if ($item->type == 'text') {
-            $html = '<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control" placeholder="Input ' . $item->label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '"/>';
+            $html = '<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control" placeholder="Input ' . $item->label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '" style="width: 200px"/>';
             $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control" placeholder="Input ' . $item->label . '"/>';
           } elseif ($item->type == 'number') {
-            $html = '<input type="number" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control" placeholder="Input ' . $item->label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '"/>';
+            $html = '<input type="number" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control" placeholder="Input ' . $item->label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '" style="width: 200px"/>';
             $jshtml = '<input type="number" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '"  class="form-control" placeholder="Input ' . $item->label . '"/>';
           } elseif ($item->type == 'decimal') {
-            $html = '<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control decimal" placeholder="Input ' . $item->label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '"/>';
+            $html = '<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control decimal" placeholder="Input ' . $item->label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '" style="width: 200px"/>';
             $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control decimal" placeholder="Input ' . $item->label . '"/>';
           } elseif ($item->type == 'file') {
             $html = '<div class="custom-file"><input type="file" class="custom-file-input" id="customFile" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" accept=".doc,.docx,.pdf"><label class="custom-file-label" for="customFile">Choose file</label></div>';
             $jshtml = '<div class="custom-file"><input type="file" class="custom-file-input" id="customFile" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" accept=".doc,.docx,.pdf"><label class="custom-file-label" for="customFile">Choose file</label></div>';
           } elseif ($item->type == 'date') {
-            $html = '<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control date" placeholder="Input ' . $item->label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '" readonly/>';
+            $html = '<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control date" placeholder="Input ' . $item->label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '" readonly style="width: 200px"/>';
             $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control date" placeholder="Input ' . $item->label . '" readonly/>';
           } elseif ($item->type == 'datetime') {
-            $html = '<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '"/>';
+            $html = (isset($query[$index]->value) ? $query[$index]->value : NULL).'<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '" style="width: 200px"/>';
             $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" />';
           } elseif ($item->type == 'image') {
-            $html = '<input type="text" class="form-control" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" accept=".jpg,.png,.jpeg">';
-            $jshtml = '<input type="text" class="form-control" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" accept=".jpg,.png,.jpeg">';
+            $html = '<div class="col-md-6">
+              <div class="form-group">
+                  <input type="file" class="form-control ' . $item->name . '" id="' . $i . '" accept=".jpg,.png,.jpeg" style="width:110px">
+              </div>
+              <div class="croppie_image" id="croppie' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '"></div>
+              <input type="hidden" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '">
+            </div>';
+            $jshtml = '<div class="form-group"><input type="file" class="form-control ' . $item->name . '" id="' . sprintf("%s", "'+ nextindex +'") . '" accept=".jpg,.png,.jpeg"><div class="croppie_image" id="croppie' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '"></div><input type="hidden" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '"></div>';
+            $initjs .= "initcroppie$item->name();";
+//            $imgPath = public_path('template_image');
+            $js .= '
+            initcroppie' . $item->name . '();
+            function initcroppie' . $item->name . '(){
+              let croppie' . $item->name . ' = {};
+              ' . $jsEditCroppie . '
+              $(".' . $item->name . '").on("change", function () {
+                let photo = $(this);
+                if (this.files && this.files[0]) {
+                  let reader = new FileReader();
+                  reader.onload = function (e) {
+                    photo.parent().closest("td").find(".croppie_image").empty().append("' . sprintf("%s", "<img src=''>") . '")
+                    photo.parent().closest("td").find(".croppie_image img").attr("src", e.target.result);
+                    let id = photo.attr("id");
+                    croppie' . $item->name . '[id] = new Croppie(photo.parent().parent().closest("td").find(".croppie_image img")[0], {
+                      boundary: {width: 300, height: 150},
+                      viewport: {width: 270, height: 130, type: "square"},
+                      showZoomer: true,
+                      enableResize: true,
+                      mouseWheelZoom: "ctrl"
+                    });
+                  }
+                  reader.readAsDataURL(this.files[0]);
+                }
+              });
+              $(".btnSubmit").click(function () {
+                 Object.keys(croppie' . $item->name . ').forEach(function(key){
+                   croppie' . $item->name . '[key].result({type: "base64", size: "original", circle: false})
+                     .then(function (dataImg) {
+                        $("input[name=' . sprintf("%s", "'") . $name . '["+key+"][' . $item->name . ']' . sprintf("%s", "'") . ']").val(dataImg);
+                     });
+                 });
+               });
+            }
+            ';
           } elseif ($item->type == 'currency') {
             $html = '<input type="text" class="form-control currency" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '">';
             $jshtml = '<input type="text" class="form-control currency" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '">';
@@ -765,19 +845,26 @@ class DocumentController extends Controller
           </select>
         ';
         } elseif ($item->tag == 'textarea') {
-          $html = '<textarea class="form-control"  name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" rows="3">' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '</textarea>';
+          $html = '<textarea class="form-control"  name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" rows="3" style="width: 200px">' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '</textarea>';
           $jshtml = '<textarea class="form-control"  name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" rows="3"></textarea>';
         } elseif ($item->tag == 'checkbox') {
           $option = NULL;
+          $optionjs = NULL;
           $edited = (isset($query[$index]->value) ? explode(', ', $query[$index]->value) : array());
           foreach ($item->selectoption as $itemCheckbox):
             $checkboxStatus = NULL;
-            foreach ($edited as $itemChecked) {
-              if ($itemChecked == $itemCheckbox['option_value']) {
+            if ($edit) {
+              foreach ($edited as $itemChecked) {
+                if ($itemChecked == $itemCheckbox['option_value']) {
+                  $checkboxStatus = 'checked';
+                  break;
+                } else {
+                  $checkboxStatus = NULL;
+                }
+              }
+            } else {
+              if ($itemCheckbox['option_value']) {
                 $checkboxStatus = 'checked';
-                break;
-              } else {
-                $checkboxStatus = NULL;
               }
             }
             $option .= '
@@ -791,16 +878,28 @@ class DocumentController extends Controller
            </label>
           ';
           endforeach;
-          $html = '<div class="checkbox-list">' . $option . '</div>';
+          $html = '<div class="checkbox-list" style="width: 150px">' . $option . '</div>';
           $jshtml = '<div class="checkbox-list">' . $optionjs . '</div>';
         } elseif ($item->tag == 'radio') {
           $option = NULL;
-          $checkboxVal = explode(", ", ($templateFormData->value ?? NULL));
+          $optionjs = NULL;
+          $checked = $query[$index]->value ?? NULL;
           foreach ($item->selectoption as $itemRadio):
-            $checked = $edit ? (in_array($item->option_value, $checkboxVal) ? 'checked' : NULL) : ($item->option_selected ? 'checked' : NULL);
+            $checkboxStatus = NULL;
+            if ($edit) {
+              if ($itemRadio['option_value'] == $checked) {
+                $checkboxStatus = 'checked';
+              } else {
+                $checkboxStatus = NULL;
+              }
+            } else {
+              if ($itemRadio['option_value']) {
+                $checkboxStatus = 'checked';
+              }
+            }
             $option .= '
-              <label class="radio">
-                <input type="radio" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" value="' . $itemRadio->option_value . '" ' . $checked . '/>
+              <label class="radio"  style="width: 150px">
+                <input type="radio" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" value="' . $itemRadio->option_value . '" ' . $checkboxStatus . '/>
                 <span></span> ' . $itemRadio->option_text . '
              </label>
             ';
@@ -846,34 +945,35 @@ class DocumentController extends Controller
         ';
       $jsAfter = "<tr class='$name' id='{$name}_" . sprintf("%s", '" + nextindex + "') . "'></tr>";
       $render['js'] = '
-          $(".add' . $name . '").on("click", function () {
-            let total_items = $(".' . $name . '").length;
-            let lastid = $(".' . $name . ':last").attr("id");
-            let split_id = lastid.split("_");
-            let nextindex = Number(split_id[split_id.length-1]) + 1;
-            let max = 100;
-            if (total_items < max) {
-              $(".' . $name . ':last").after("' . $jsAfter . '");
-               $("#' . $name . '_" + nextindex).append(
-               "' . sprintf('%s', "<td><button style='max-width: 50px' type='button' id='{$name}_" . sprintf("%s", '" + nextindex + "') . "' class='btn btn-block btn-danger rm{$name}'>-</button></td>" . "") . '"+
-               ' . $jsInput . '
-               );
-            }
-            initType();
-          });
+        ' . $js . '
+        $(".add' . $name . '").on("click", function () {
+          let total_items = $(".' . $name . '").length;
+          let lastid = $(".' . $name . ':last").attr("id");
+          let split_id = lastid.split("_");
+          let nextindex = Number(split_id[split_id.length-1]) + 1;
+          let max = 100;
+          if (total_items < max) {
+            $(".' . $name . ':last").after("' . $jsAfter . '");
+             $("#' . $name . '_" + nextindex).append(
+             "' . sprintf('%s', "<td><button style='max-width: 50px' type='button' id='{$name}_" . sprintf("%s", '" + nextindex + "') . "' class='btn btn-block btn-danger rm{$name}'>-</button></td>" . "") . '"+
+             ' . $jsInput . ')
+          }
+          initType();
+          ' . $initjs . '
+        });
 
-          $("tbody").on("click", ".rm' . $name . '", function () {
-            let id = this.id;
-            let split_id = id.split("_");
-            let deleteindex = split_id[split_id.length-1];
-            $("#' . $name . '_"  + deleteindex).remove();
-            initType();
-          });
-
-          ';
+        $("tbody").on("click", ".rm' . $name . '", function () {
+          let id = this.id;
+          let split_id = id.split("_");
+          let deleteindex = split_id[split_id.length-1];
+          $("#' . $name . '_"  + deleteindex).remove();
+          initType();
+        });
+        ';
     } else {
       $render['html'] = NULL;
     }
+
     return $render;
 
   }

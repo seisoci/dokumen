@@ -25,7 +25,7 @@ class Fileupload
       }
       $image = str_replace('data:image/png;base64,', '', $image);
       $image = str_replace(' ', '+', $image);
-      $imageName = Carbon::now()->timestamp.'.png';
+      $imageName = Carbon::now()->timestamp.rand().'.png';
       Image::make(base64_decode($image))->save($publicPath . '/' . $imageName);
       return $imageName;
     } else {
@@ -97,6 +97,12 @@ class Fileupload
       Storage::disk('public_upload')->putFileAs($filePath, $file, $fileName);
     }
     return $fileName;
+  }
+
+  public static function deleteTemplateImage($fileName)
+  {
+    $filePath = 'template_image';
+    Storage::disk('public_upload')->delete($filePath . '/' . $fileName);
   }
 
   public static function deleteFilePublic($fileName)

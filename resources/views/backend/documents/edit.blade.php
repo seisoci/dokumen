@@ -22,7 +22,7 @@
             </div>
             <div class="card-footer d-flex justify-content-end">
               <button type="button" class="btn btn-secondary mr-2" onclick="window.history.back();">Cancel</button>
-              <button type="submit" class="btn btn-primary">Submit</button>
+              <button type="submit" class="btn btn-primary btnSubmit">Submit</button>
             </div>
           </div>
         </form>
@@ -37,10 +37,6 @@
   <link rel="stylesheet" href="{{ asset('css/backend/croppie/croppie.min.css') }}"/>
   <link rel="stylesheet" href="{{ asset('css/backend/datetimepicker/bootstrap-datetimepicker.css') }}" type="text/css">
   <style>
-    .table-responsive {
-      overflow-x: inherit;
-    }
-
     .table td {
       position: relative !important;
 
