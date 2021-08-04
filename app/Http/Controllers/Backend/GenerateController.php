@@ -5,17 +5,15 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Models\TemplateData;
 use App\Models\TemplateForm;
-use App\Models\TemplateFormData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use PhpOffice\PhpWord\Element\ListItem;
-use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Element\TextRun;
-use ZipArchive;
+use PhpOffice\PhpWord\TemplateProcessor;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ZipArchive;
 
 class GenerateController extends Controller
 {
@@ -25,6 +23,8 @@ class GenerateController extends Controller
   {
     $templateData = TemplateData::with('template')->findOrFail($id);
     $templateForm = TemplateForm::with(['children', 'selectoption', 'valuesingle' => function ($q) use ($id) {
+      $q->where('template_data_id', $id);
+    }, 'children.valuemulti' => function ($q) use ($id) {
       $q->where('template_data_id', $id);
     }])
       ->whereNull('parent_id')
@@ -52,17 +52,21 @@ class GenerateController extends Controller
   public function generatemulti(Request $request)
   {
     $filePath = 'template_temp';
-    Storage::disk('public_upload')->deleteDirectory($filePath . '/*');
+    Storage::disk('public_upload')->deleteDirectory($filePath);
+    $saveto = public_path('template_temp');
+    if (!File::isDirectory("$saveto")) {
+      File::makeDirectory("$saveto", 0755, true);
+    }
     $zip_file = $filePath . '/invoices.zip';
     $zip = new ZipArchive();
     $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-    $data = $request->data;
-
-    $saveto = public_path('template_temp');
+    $data = json_decode($request->data) ?? array();
     foreach ($data as $item) {
       $random = rand();
       $templateData = TemplateData::with('template')->findOrFail($item);
       $templateForm = TemplateForm::with(['children', 'selectoption', 'valuesingle' => function ($q) use ($item) {
+        $q->where('template_data_id', $item);
+      }, 'children.valuemulti' => function ($q) use ($item) {
         $q->where('template_data_id', $item);
       }])
         ->whereNull('parent_id')
@@ -78,12 +82,7 @@ class GenerateController extends Controller
       endforeach;
 
       $fileName = $random . '_' . $templateData->template->file;
-      header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-      header('Content-Type: application/octet-stream');
-      header("Content-Disposition: attachment; filename=$fileName");
-      header("Content-Transfer-Encoding: binary");
-      header('Expires: 0');
-      $this->templateProcessor->saveAs($saveto.'\\'.$fileName);
+      $this->templateProcessor->saveAs($saveto . '\\' . $fileName);
     }
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($saveto));
     foreach ($files as $file) :
@@ -94,7 +93,12 @@ class GenerateController extends Controller
       }
     endforeach;
     $zip->close();
-    return response()->download($zip_file);
+    $response = response()->json([
+      'status' => 'success',
+      'message' => 'Data has been saved',
+      'redirect' => '/template_temp/invoices.zip'
+    ]);
+    return $response;
   }
 
   public function single($data)
@@ -104,8 +108,8 @@ class GenerateController extends Controller
     $text = new TextRun();
     if (in_array($data['tag'], ['input', 'select', 'textarea'])) {
       if ($data['type'] == 'image') {
-        if ($data['valuesingle']['value']) {
-          list($width, $height) = getimagesize($imgPath . '/' . $data['valuesingle']['value']);
+        if (($data['valuesingle']['value'] ?? NULL)) {
+          list($width, $height) = getimagesize($imgPath . '\\' . $data['valuesingle']['value']);
           $templateProcessor = $this->templateProcessor->setImageValue($data['name'], array('path' => $imgPath . '/' . $data['valuesingle']['value'], 'width' => $width, 'height' => $height));
         }
       } else {
@@ -129,10 +133,10 @@ class GenerateController extends Controller
       $templateProcessor = $this->templateProcessor->setComplexValue($data['name'], $text);
     } elseif ($data['tag'] == 'radio') {
       foreach ($data['selectoption'] as $item):
-        if ($data['valuesingle']['value'] == $item['option_value']) {
-          $text->addText("🗹 " . $item['option_value']);
+        if (($data['valuesingle']['value'] ?? NULL) == $item['option_value']) {
+          $text->addText("⦿ " . $item['option_value']);
         } else {
-          $text->addText("☐ " . $item['option_value']);
+          $text->addText("○ " . $item['option_value']);
         }
         $text->addText("   ");
       endforeach;
@@ -154,6 +158,17 @@ class GenerateController extends Controller
       $templateProcessor = $this->templateProcessor->setComplexValue($data['name'], $text);
     } elseif (in_array($data['tag'], ['table', 'block'])) {
       $array = $this->table($data);
+//      dd($array);
+//      foreach ($data['children'] as $key => $item){
+//        if($item['type'] == 'image'){
+//          foreach ($array as $i => $itemImage) {
+//            $name = $item['name'];
+//            list($width, $height) = getimagesize($imgPath . '/' . $itemImage["je_photo"]);
+//            dd($imgPath . '\\' . $itemImage["je_photo"]);
+//            $templateProcessor = $this->templateProcessor->setImageValue(sprintf($item['name'].'#%d', $i + 1), $imgPath . '\\1628063790302726375.png');
+//          }
+//        }
+//      }
       $id = $data['children'][0]['name'] ?? NULL;
       if ($id && $array) {
         try {
@@ -166,14 +181,21 @@ class GenerateController extends Controller
     return $templateProcessor;
   }
 
-  public function table($data)
+  public function table($dataChildren)
   {
     $array = array();
-    foreach ($data['children'] as $item):
+    $data = $dataChildren['children'];
+    foreach ($data as $item):
       if (in_array($item['tag'], ['input', 'select', 'textarea'])) {
-        foreach ($item['valuemulti'] as $key => $valmulti):
-          $array[$key][$item['name']] = $valmulti['value'] ?? NULL;
-        endforeach;
+        if ($item['type'] == 'image') {
+          foreach ($item['valuemulti'] as $key => $valmulti):
+//            $array[$key][$item['name']] = $valmulti['value'] ?? NULL;
+          endforeach;
+        } else {
+          foreach ($item['valuemulti'] as $key => $valmulti):
+            $array[$key][$item['name']] = $valmulti['value'] ?? NULL;
+          endforeach;
+        }
       } elseif ($item['tag'] == 'checkbox') {
         foreach ($item['valuemulti'] as $key => $valmulti):
           $text = NULL;
@@ -200,9 +222,9 @@ class GenerateController extends Controller
           $text = NULL;
           foreach ($item['selectoption'] as $keyOption => $itemOption):
             if ($valmulti['value'] == $itemOption['option_value']) {
-              $text .= "🗹 " . $itemOption['option_value'];
+              $text .= "⦿ " . $itemOption['option_value'];
             } else {
-              $text .= "☐ " . $itemOption['option_value'];
+              $text .= "○ " . $itemOption['option_value'];
             }
             if ((count($item['selectoption']) - 1) != $keyOption) {
               $text .= '   ';

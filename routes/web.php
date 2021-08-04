@@ -45,5 +45,5 @@ Route::middleware('auth:web')->group(function () {
   Route::post('templateforms/{id}/changehierarchy', [TemplateFormController::class, 'change_hierarchy'])->name('change_hierarchy');
   Route::resource('templateforms', TemplateFormController::class)->except(['index', 'create', 'edit']);
   Route::get('generatesingle/{id}', [GenerateController::class, 'generatesingle'])->name('generate.single');
-  Route::get('generatemulti', [GenerateController::class, 'generatemulti'])->name('generate.generatemulti');
+  Route::post('generatemulti', [GenerateController::class, 'generatemulti'])->name('generate.generatemulti');
 });

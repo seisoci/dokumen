@@ -10,19 +10,16 @@ use Illuminate\Support\Str;
 
 class Fileupload
 {
-  public $image_path;
-  public $document_path;
-
-  // [array('800', '450', 'thumbnail'), array('1280', '720', 'compress')]
   public static function uploadImagePublic($file, $dimensions = NULL, $location = 'storage', $old_file = NULL, $fileName = NULL, $imagetype = NULL)
   {
     if ($imagetype == 'base64') {
-      $image = $file;  // your base64 encoded
+      $image = $file;
 
       $publicPath = public_path('template_image');
       if (!File::isDirectory("$publicPath")) {
         File::makeDirectory("$publicPath", 0755, true);
       }
+
       $image = str_replace('data:image/png;base64,', '', $image);
       $image = str_replace(' ', '+', $image);
       $imageName = Carbon::now()->timestamp.rand().'.png';
@@ -37,7 +34,7 @@ class Fileupload
           $fileName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '_' . Carbon::now()->timestamp) . '.' . $ext;
 
           if (!File::isDirectory("$image_path/original")) {
-            File::makeDirectory("$image_path/original", 0777, true);
+            File::makeDirectory("$image_path/original", 0755, true);
           }
           Image::make($file)->save($image_path . '/original/' . $fileName);
           File::delete("images/original/$old_file");
@@ -48,7 +45,7 @@ class Fileupload
               $constraint->aspectRatio();
             });
             if (!File::isDirectory($image_path . '/' . $row[2])) {
-              File::makeDirectory($image_path . '/' . $row[2], 0777, true);
+              File::makeDirectory($image_path . '/' . $row[2], 0755, true);
             }
             $canvas->insert($resizeImage, 'center');
             $canvas->save($image_path . '/' . $row[2] . '/' . $fileName);

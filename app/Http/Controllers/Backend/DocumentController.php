@@ -319,9 +319,9 @@ class DocumentController extends Controller
           if ($request->input($itemParent->name) && !in_array($itemParent->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
             if ($itemParent->type == 'image') {
               $fileName = $request->input($itemParent->name) ? Fileupload::uploadImagePublic($request->input($itemParent->name), NULL, NULL, NULL, NULL, "base64") : NULL;
-              $deletedData =TemplateFormData::where('template_data_id', $templateData->id)->where('template_form_id', $itemParent->id )->first();
+              $deletedData = TemplateFormData::where('template_data_id', $templateData->id)->where('template_form_id', $itemParent->id)->first();
               Fileupload::deleteTemplateImage($deletedData->value);
-              if($fileName){
+              if ($fileName) {
                 TemplateFormData::updateOrCreate([
                   'template_data_id' => $templateData->id,
                   'template_form_id' => $itemParent->id,
@@ -350,21 +350,34 @@ class DocumentController extends Controller
                 'template_data_id' => $templateData->id,
                 'template_form_id' => $itemParent->id,
               ], [
-              'value' => isset($request[$itemParent->name]) ? implode(", ", $request[$itemParent->name]) : NULL
+                'value' => isset($request[$itemParent->name]) ? implode(", ", $request[$itemParent->name]) : NULL
               ]);
             }
           endif;
         } elseif (in_array($itemParent->tag, ['table', 'block'])) {
           foreach ($itemParent->children as $itemChild):
             $childrenForm = array_values($request[$itemParent->name]);
-            TemplateFormData::where('template_data_id', $templateData->id)->where('template_form_id', $itemChild->id)->delete();
+            $templateFormData = TemplateFormData::where('template_data_id', $templateData->id)->where('template_form_id', $itemChild->id);
+            foreach($templateFormData->get() as $itemPhoto):
+              Fileupload::deleteTemplateImage($itemPhoto->value);
+            endforeach;
+            $templateFormData->delete();
             foreach ($childrenForm as $item):
               if (!in_array($itemChild->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
-                TemplateFormData::create([
-                  'template_data_id' => $templateData->id,
-                  'template_form_id' => $itemChild->id,
-                  'value' => $item[$itemChild->name] ?? NULL
-                ]);
+                if ($itemChild->type == 'image') {
+                  $fileName = $item[$itemChild->name] ? Fileupload::uploadImagePublic($item[$itemChild->name], NULL, NULL, NULL, NULL, "base64") : NULL;
+                  TemplateFormData::create([
+                    'template_data_id' => $templateData->id,
+                    'template_form_id' => $itemChild->id,
+                    'value' => $fileName
+                  ]);
+                } else {
+                  TemplateFormData::create([
+                    'template_data_id' => $templateData->id,
+                    'template_form_id' => $itemChild->id,
+                    'value' => $item[$itemChild->name] ?? NULL
+                  ]);
+                }
               elseif (in_array($itemChild->tag, ['checkbox', 'ul', 'ol'])):
                 if (!$itemChild->multiple) {
                   TemplateFormData::create([
@@ -376,7 +389,7 @@ class DocumentController extends Controller
                   TemplateFormData::create([
                     'template_data_id' => $templateData->id,
                     'template_form_id' => $itemChild->id,
-                    'value' => isset($request[$itemChild->name]) ? implode(", ", $request[$itemChild->name]) : NULL
+                    'value' => isset($item[$itemChild->name]) ? implode(", ", $item[$itemChild->name]) : NULL
                   ]);
                 }
               endif;
@@ -505,21 +518,21 @@ class DocumentController extends Controller
           </div>
         ';
       } elseif ($type == 'image') {
-        $imgUrl = $templateFormData->value ? asset('template_image').'/'.($templateFormData->value ?? NULL) : ($templateFormData->value ?? NULL);
+        $imgUrl = isset($templateFormData->value) ? asset('template_image') . '/' . ($templateFormData->value ?? NULL) : NULL;
         $render['html'] = '
           <div class="col-md-6">
             <div class="form-group">
               <label>Upload Gambar ' . $label . '</label>
               <div></div>
               <div class="custom-file">
-                <input type="file" class="custom-file-input" id="file' . $name . '" accept=".jpg,.png,.jpeg" required>
+                <input type="file" class="custom-file-input" id="file' . $name . '" accept=".jpg,.png,.jpeg">
                 <label class="custom-file-label" for="file' . $name . '">Pilih gambar ' . $label . '</label>
               </div>
             </div>
           </div>
           <div class="col-md-6">
             <div id="croppie' . $name . '">
-                <img src="'.$imgUrl.'" width="400px" height="200px">
+                 ' . ($imgUrl ? '<img src="' . $imgUrl . '" width="400px" height="200px">' : NULL) . ';
             </div>
             <input type="hidden" name="' . $name . '">
           </div>';
@@ -726,7 +739,6 @@ class DocumentController extends Controller
     $thead = NULL;
     $html = NULL;
     $jshtml = NULL;
-    $optionjs = NULL;
     $countVal = 0;
     $js = NULL;
     $initjs = NULL;
@@ -773,19 +785,29 @@ class DocumentController extends Controller
             $html = '<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control date" placeholder="Input ' . $item->label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '" readonly style="width: 200px"/>';
             $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control date" placeholder="Input ' . $item->label . '" readonly/>';
           } elseif ($item->type == 'datetime') {
-            $html = (isset($query[$index]->value) ? $query[$index]->value : NULL).'<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '" style="width: 200px"/>';
+            $html = (isset($query[$index]->value) ? $query[$index]->value : NULL) . '<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '" style="width: 200px"/>';
             $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" />';
           } elseif ($item->type == 'image') {
+            $publicPath =  public_path('template_image');
+            $imgUrl = NULL;
+            if(isset($query[$index]->value)){
+              try{
+                $imgUrl = (isset($query[$index]->value) ? "data:image/png;base64,".base64_encode(file_get_contents($publicPath.'\\'.$query[$index]->value)): NULL);
+              }catch(\Exception $exception){
+
+              }
+            }
             $html = '<div class="col-md-6">
               <div class="form-group">
                   <input type="file" class="form-control ' . $item->name . '" id="' . $i . '" accept=".jpg,.png,.jpeg" style="width:110px">
               </div>
-              <div class="croppie_image" id="croppie' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '"></div>
-              <input type="hidden" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '">
+              <div class="croppie_image" id="croppie' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '">
+                 ' . ($imgUrl ? '<img src="' . $imgUrl . '" width="200px" height="100px">' : NULL) . '
+                </div>
+              <input type="hidden" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" value="'.($imgUrl ?? NULL).'">
             </div>';
             $jshtml = '<div class="form-group"><input type="file" class="form-control ' . $item->name . '" id="' . sprintf("%s", "'+ nextindex +'") . '" accept=".jpg,.png,.jpeg"><div class="croppie_image" id="croppie' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '"></div><input type="hidden" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '"></div>';
             $initjs .= "initcroppie$item->name();";
-//            $imgPath = public_path('template_image');
             $js .= '
             initcroppie' . $item->name . '();
             function initcroppie' . $item->name . '(){
