@@ -51,7 +51,8 @@
   <script type="text/javascript">
     $(document).ready(function () {
       function initType() {
-        $(".decimal").inputmask('decimal', {
+        $(".decimal").inputmask({
+          mask: "9{1,}.99",
           groupSeparator: '.',
           digits: 2,
           rightAlign: true,

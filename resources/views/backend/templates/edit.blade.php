@@ -130,7 +130,7 @@
                 <div class="form-group">
                   <label>Name</label>
                   <input type="text" class="form-control" name="name"
-                         placeholder="Input Form Name {Name} harus unik" value="{{ $edited->label }}">
+                         placeholder="Input Form Name {Name} harus unik" value="{{ $edited->name }}">
                 </div>
                 <div class="form-group">
                   <label>Tag Input</label>

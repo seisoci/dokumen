@@ -405,11 +405,11 @@ class DocumentController extends Controller
       ]);
     } catch (\Throwable $throw) {
       DB::rollBack();
-      $response = $throw;
-//      $response = response()->json([
-//        'status' => 'error',
-//        'message' => 'Gagal menyimpan data'
-//      ]);
+//      $response = $throw;
+      $response = response()->json([
+        'status' => 'error',
+        'message' => 'Gagal menyimpan data'
+      ]);
     }
     return $response;
   }

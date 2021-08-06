@@ -99,6 +99,11 @@
 @section('styles')
   <link href="{{ asset('plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css"/>
   <link href="{{ asset('css/backend/datatables/dataTables.checkboxes.css') }}" rel="stylesheet" type="text/css"/>
+  <style>
+    table.dataTable tbody td.selected a, table.dataTable tbody th.selected a, table.dataTable tbody tr.selected a {
+      color: #101010 !important;
+    }
+  </style>
 @endsection
 
 {{-- Scripts Section --}}

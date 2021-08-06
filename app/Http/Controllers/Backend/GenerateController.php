@@ -158,21 +158,31 @@ class GenerateController extends Controller
       $templateProcessor = $this->templateProcessor->setComplexValue($data['name'], $text);
     } elseif (in_array($data['tag'], ['table', 'block'])) {
       $array = $this->table($data);
-//      dd($array);
-//      foreach ($data['children'] as $key => $item){
-//        if($item['type'] == 'image'){
-//          foreach ($array as $i => $itemImage) {
-//            $name = $item['name'];
-//            list($width, $height) = getimagesize($imgPath . '/' . $itemImage["je_photo"]);
-//            dd($imgPath . '\\' . $itemImage["je_photo"]);
-//            $templateProcessor = $this->templateProcessor->setImageValue(sprintf($item['name'].'#%d', $i + 1), $imgPath . '\\1628063790302726375.png');
-//          }
-//        }
-//      }
+      $image = [];
+      foreach ($data['children'] as $key => $item) {
+        if ($item['type'] == 'image') {
+          $name = $item['name'];
+          $image[$name] = array();
+          foreach ($array as $i => $itemImage) {
+            if (isset($itemImage[$name])) {
+              array_push($image[$name], $itemImage[$name]);
+              unset($array[$i][$name]);
+            }
+//            list($width, $height) = getimagesize($imgPath . '/' . $item[$name]);
+//            $templateProcessor = $this->templateProcessor->setImageValue(sprintf($item[$name].'#%d', $i + 1), $imgPath . '\\'.$itemImage[$name]);
+          }
+        }
+      }
       $id = $data['children'][0]['name'] ?? NULL;
       if ($id && $array) {
         try {
           $templateProcessor = $this->templateProcessor->cloneRowAndSetValues($id, $array);
+          foreach ($image as $key => $itemImg) {
+            foreach ($itemImg as $i => $item) {
+              $templateProcessor = $this->templateProcessor->setImageValue(sprintf($key . '#%d', $i + 1), $imgPath . '\\' . $item);
+            }
+          }
+
         } catch (\Exception $e) {
           error_log(0);
         }
@@ -189,9 +199,17 @@ class GenerateController extends Controller
       if (in_array($item['tag'], ['input', 'select', 'textarea'])) {
         if ($item['type'] == 'image') {
           foreach ($item['valuemulti'] as $key => $valmulti):
-//            $array[$key][$item['name']] = $valmulti['value'] ?? NULL;
+            $array[$key][$item['name']] = $valmulti['value'] ?? NULL;
           endforeach;
-        } else {
+        } elseif ($item['type'] == 'decimal') {
+          foreach ($item['valuemulti'] as $key => $valmulti):
+            $array[$key][$item['name']] = isset($valmulti['value']) ? number_format($valmulti['value'], 2, '.', '') : NULL;
+          endforeach;
+        } elseif ($item['type'] == 'currency') {
+          foreach ($item['valuemulti'] as $key => $valmulti):
+            $array[$key][$item['name']] = isset($valmulti['value']) ? number_format($valmulti['value'], 2, '.', ',') : NULL;
+          endforeach;
+        }else{
           foreach ($item['valuemulti'] as $key => $valmulti):
             $array[$key][$item['name']] = $valmulti['value'] ?? NULL;
           endforeach;
