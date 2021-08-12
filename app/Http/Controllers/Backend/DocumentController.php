@@ -808,7 +808,7 @@ class DocumentController extends Controller
             $imgUrl = NULL;
             if (isset($query[$index]->value)) {
               try {
-                $imgUrl = (isset($query[$index]->value) ? "data:image/png;base64," . base64_encode(file_get_contents($publicPath . '\\' . $query[$index]->value)) : NULL);
+                $imgUrl = (isset($query[$index]->value) ? "data:image/png;base64," . base64_encode(file_get_contents($publicPath . '/' . $query[$index]->value)) : NULL);
               } catch (\Exception $exception) {
 
               }
