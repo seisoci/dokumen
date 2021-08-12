@@ -66,6 +66,12 @@ class GenerateController extends Controller
   public function generatemulti(Request $request)
   {
     $data = json_decode($request->data) ?? array();
+    if(count($data) <= 0){
+      return response()->json([
+        'status' => 'error',
+        'message' => 'Tidak ada data yang dipilih',
+      ]);
+    }
     $batchName = TemplateData::with('template')->findOrFail($data[0]);
 
     $filePath = 'template_temp';
