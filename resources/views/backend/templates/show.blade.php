@@ -31,15 +31,15 @@
                     <div class="d-flex align-items-center">
                       <i class="fas fa-arrows-alt pr-2"></i>
                       <div
-                        class="w-100 font-size-sm">{{ $item->label }}{{ $item->tag != 'table' ? '{' .$item->name. '}' : '' }}
+                        class="w-100 font-size-sm {{ $item->is_file_name ? 'font-weight-bold text-success' : NULL }}">{{ $item->label }}{{ $item->tag != 'table' ? '{' .$item->name. '}' : '' }}
                         - {{ ucfirst($item->tag) }}{{ $item->tag != 'table' ? '['.ucfirst($item->type).']' : NULL}}
                       </div>
                       <div class="btn-group">
                         <span
                           class="btn btn-sm {{ $item->is_column_table == 1 ? 'btn-success' : 'btn-danger' }}">{{ $item->is_column_table == 1 ? 'Show' : 'Hide' }}</span>
                         <a href="/templates/{{ $item->template_id }}/edit?id={{ $item->id }}"
-                           class="btn btn-sm btn-default"
-                        ><i class="fa fa-fw fa-edit"></i>
+                           class="btn btn-sm btn-default">
+                          <i class="fa fa-fw fa-edit"></i>
                         </a>
                         <button
                           type="button"
@@ -59,12 +59,10 @@
                             <div class="d-flex align-items-center">
                               <i class="fas fa-arrows-alt pr-2"></i>
                               <div
-                                class="w-100 font-size-xs">{{ $child->label }}{{ !empty($child->name) ? '{' .$child->name. '}' : '' }}
+                                class="w-100 font-size-xs {{ $child->is_file_name ? 'font-weight-bold text-success' : NULL }}">{{ $child->label }}{{ !empty($child->name) ? '{' .$child->name. '}' : '' }}
                                 - {{ ucfirst($child->tag) }}[{{ ucfirst($child->type) }}]
                               </div>
                               <div class="btn-group">
-                                <span
-                                  class="btn btn-sm {{ $child->is_column_table == 1 ? 'btn-success' : 'btn-danger' }}">{{ $child->is_column_table == 1 ? 'Show' : 'Hide' }}</span>
                                 <a href="/templates/{{ $child->template_id }}/edit?id={{ $child->id }}"
                                    class="btn btn-sm btn-default"
                                 ><i class="fa fa-fw fa-edit"></i>
@@ -122,8 +120,7 @@
                 </div>
                 <div class="form-group">
                   <label>Name</label>
-                  <input type="text" class="form-control" name="name"
-                         placeholder="Input Form Name {Name} harus unik">
+                  <input type="text" class="form-control" name="name" placeholder="Input Form Name {Name} harus unik">
                 </div>
                 <div class="form-group">
                   <label>Tag Input</label>
@@ -182,6 +179,17 @@
                     </label>
                     <label class="btn btn-sm btn-info">
                       <input type="radio" name="is_column_table" value="1"> Ya
+                    </label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label style="display: block;">Gunakan sebagai Nama File (Unik)</label>
+                  <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-sm btn-info active">
+                      <input type="radio" name="is_file_name" value="0" checked> Tidak
+                    </label>
+                    <label class="btn btn-sm btn-info">
+                      <input type="radio" name="is_file_name" value="1"> Ya
                     </label>
                   </div>
                 </div>
@@ -504,7 +512,7 @@
               $.each(response.error, function (key, value) {
                 $(".alert-text").append('<span style="display: block">' + value + '</span>');
               });
-              toastr.error("Please complete your form", 'Failed !');
+              toastr.error((response.message || "Please complete your form"), 'Failed !');
             }
           },
           error: function (response) {

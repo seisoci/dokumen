@@ -22,6 +22,8 @@ class GenerateController extends Controller
   public function generatesingle($id)
   {
     $templateData = TemplateData::with('template')->findOrFail($id);
+    $templateName = $templateData->template->name;
+    $ext = explode('.', $templateData->template->file);
     $templateForm = TemplateForm::with(['children', 'selectoption', 'valuesingle' => function ($q) use ($id) {
       $q->where('template_data_id', $id);
     }, 'children.valuemulti' => function ($q) use ($id) {
@@ -31,6 +33,18 @@ class GenerateController extends Controller
       ->where('template_id', $templateData->template_id)
       ->orderBy('sort_order', 'asc')
       ->get();
+
+    $templateFormName = TemplateForm::with(['children', 'selectoption', 'valuesingle' => function ($q) use ($id) {
+      $q->where('template_data_id', $id);
+    }, 'children.valuemulti' => function ($q) use ($id) {
+      $q->where('template_data_id', $id);
+    }])
+      ->whereNull('parent_id')
+      ->where('template_id', $templateData->template_id)
+      ->where('is_file_name', '1')
+      ->orderBy('sort_order', 'asc')
+      ->first();
+
     $filePath = 'template';
     $file = asset($filePath . '/' . $templateData->template->file);
     $this->templateProcessor = new TemplateProcessor($file);
@@ -39,7 +53,7 @@ class GenerateController extends Controller
       $this->single($item);
     endforeach;
 
-    $fileName = Carbon::today()->toDateString() . '_' . $templateData->template->file;
+    $fileName = $templateName.'_'.$templateFormName->valuesingle->value.'_'.Carbon::today()->toDateString().'.'.end($ext);
     header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
     header('Content-Type: application/octet-stream');
     header("Content-Disposition: attachment; filename=$fileName");
@@ -51,19 +65,22 @@ class GenerateController extends Controller
 
   public function generatemulti(Request $request)
   {
+    $data = json_decode($request->data) ?? array();
+    $batchName = TemplateData::with('template')->findOrFail($data[0]);
+
     $filePath = 'template_temp';
     Storage::disk('public_upload')->deleteDirectory($filePath);
     $saveto = public_path('template_temp');
     if (!File::isDirectory("$saveto")) {
       File::makeDirectory("$saveto", 0755, true);
     }
-    $zip_file = $filePath . '/invoices.zip';
+    $zip_file = $filePath . '/batch'.$batchName->template->name.'.zip';
     $zip = new ZipArchive();
     $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-    $data = json_decode($request->data) ?? array();
     foreach ($data as $item) {
-      $random = rand();
       $templateData = TemplateData::with('template')->findOrFail($item);
+      $templateName = $templateData->template->name;
+      $ext = explode('.', $templateData->template->file);
       $templateForm = TemplateForm::with(['children', 'selectoption', 'valuesingle' => function ($q) use ($item) {
         $q->where('template_data_id', $item);
       }, 'children.valuemulti' => function ($q) use ($item) {
@@ -73,6 +90,18 @@ class GenerateController extends Controller
         ->where('template_id', $templateData->template_id)
         ->orderBy('sort_order', 'asc')
         ->get();
+
+      $templateFormName = TemplateForm::with(['children', 'selectoption', 'valuesingle' => function ($q) use ($item) {
+        $q->where('template_data_id', $item);
+      }, 'children.valuemulti' => function ($q) use ($item) {
+        $q->where('template_data_id', $item);
+      }])
+        ->whereNull('parent_id')
+        ->where('template_id', $templateData->template_id)
+        ->where('is_file_name', '1')
+        ->orderBy('sort_order', 'asc')
+        ->first();
+
       $filePathSingle = 'template';
       $file = asset($filePathSingle . '/' . $templateData->template->file);
       $this->templateProcessor = new TemplateProcessor($file);
@@ -81,8 +110,8 @@ class GenerateController extends Controller
         $this->single($itemForm);
       endforeach;
 
-      $fileName = $random . '_' . $templateData->template->file;
-      $this->templateProcessor->saveAs($saveto . '\\' . $fileName);
+      $fileName = $templateName.'_'.$templateFormName->valuesingle->value.'_'.Carbon::today()->toDateString().'.'.end($ext);
+      $this->templateProcessor->saveAs($saveto . '/' . $fileName);
     }
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($saveto));
     foreach ($files as $file) :
@@ -96,7 +125,7 @@ class GenerateController extends Controller
     $response = response()->json([
       'status' => 'success',
       'message' => 'Data has been saved',
-      'redirect' => '/template_temp/invoices.zip'
+      'redirect' => "/$zip_file"
     ]);
     return $response;
   }
@@ -109,7 +138,7 @@ class GenerateController extends Controller
     if (in_array($data['tag'], ['input', 'select', 'textarea'])) {
       if ($data['type'] == 'image') {
         if (($data['valuesingle']['value'] ?? NULL)) {
-          list($width, $height) = getimagesize($imgPath . '\\' . $data['valuesingle']['value']);
+          list($width, $height) = getimagesize($imgPath . '/' . $data['valuesingle']['value']);
           $templateProcessor = $this->templateProcessor->setImageValue($data['name'], array('path' => $imgPath . '/' . $data['valuesingle']['value'], 'width' => $width, 'height' => $height));
         }
       } else {
@@ -168,8 +197,6 @@ class GenerateController extends Controller
               array_push($image[$name], $itemImage[$name]);
               unset($array[$i][$name]);
             }
-//            list($width, $height) = getimagesize($imgPath . '/' . $item[$name]);
-//            $templateProcessor = $this->templateProcessor->setImageValue(sprintf($item[$name].'#%d', $i + 1), $imgPath . '\\'.$itemImage[$name]);
           }
         }
       }
@@ -179,7 +206,7 @@ class GenerateController extends Controller
           $templateProcessor = $this->templateProcessor->cloneRowAndSetValues($id, $array);
           foreach ($image as $key => $itemImg) {
             foreach ($itemImg as $i => $item) {
-              $templateProcessor = $this->templateProcessor->setImageValue(sprintf($key . '#%d', $i + 1), $imgPath . '\\' . $item);
+              $templateProcessor = $this->templateProcessor->setImageValue(sprintf($key . '#%d', $i + 1), $imgPath . '/' . $item);
             }
           }
 

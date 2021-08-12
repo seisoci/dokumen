@@ -68,12 +68,19 @@ class DocumentController extends Controller
     $columns = [];
     $select = NULL;
     foreach ($data as $item):
-      array_push($datatable['js']['column'], '{ data: "' . $item->name . '", name: "' . $item->name . '" },');
       array_push($datatable['html'], '<th>' . $item->label . '</th>');
       if ($item->tag != 'table') {
-        array_push($columns, 'MAX(CASE WHEN (`template_forms`.`name` = "' . $item->name . '") THEN `template_form_data`.`value` ELSE NULL END) as `' . $item->name . '`');
+        array_push($datatable['js']['column'], '{ data: "' . $item->name . '", name: "' . $item->name . '" },');
+        array_push($columns, 'MAX(CASE WHEN (`tforms`.`name` = "' . $item->name . '") THEN `template_form_data`.`value` ELSE NULL END) as `' . $item->name . '`');
       } else {
-        array_push($columns, 'MAX(CASE WHEN (`template_forms`.`tag` = "' . $item->tag . '") THEN `template_forms`.`id` ELSE NULL END) as `' . $item->name . '`');
+        array_push($datatable['js']['column'], '{ data: "' . $item->name . '", name: "' . $item->name . '", className: "dt-center" },');
+        array_push($columns, 'MAX(CASE WHEN (`tforms`.`name` = "' . $item->name . '") THEN (SELECT COUNT(`template_form_data`.`value`)
+                                                                 FROM template_form_data
+                                                                 WHERE template_form_data.template_data_id = `template_data`.`id`
+                                                                   AND template_form_id = (SELECT `id`
+                                                                                           FROM template_forms
+                                                                                           WHERE parent_id = `tforms`.`id`
+                                                                                           LIMIT 1)) ELSE NULL END) as `' . $item->name . '`');
       }
     endforeach;
     if (count($columns) > 0) {
@@ -82,19 +89,22 @@ class DocumentController extends Controller
     $select .= implode(', ', $columns);
     array_push($datatable['js']['column'], '{ data: "action", name: "action", orderable: false },');
     array_push($datatable['html'], '<th>Action</th>');
+
     if ($request->ajax()) {
-      $dataTable = TemplateFormData::select(DB::raw('`template_data`.`id` AS `id`' . $select))
-        ->leftJoin('template_forms', 'template_forms.id', '=', 'template_form_data.template_form_id')
-        ->leftJoin('template_data', 'template_data.id', '=', 'template_form_data.template_data_id')
-        ->where('template_data.template_id', $id)
-        ->groupBy('template_data.id')
-        ->orderBy('template_data.id', 'desc');
+      $dataTable =
+        DB::table('template_form_data')
+          ->select(DB::raw('`template_data`.`id` AS `id`' . $select))
+          ->leftJoin(DB::raw('template_forms AS tforms'), 'tforms.id', '=', 'template_form_data.template_form_id')
+          ->leftJoin('template_data', 'template_data.id', '=', 'template_form_data.template_data_id')
+          ->where('template_data.template_id', $id)
+          ->groupBy('template_data.id')
+          ->orderBy('template_data.id', 'desc');
 
       return DataTables::of($dataTable)
         ->filter(function ($query) use ($select, $id) {
           if (request()->has('value')) {
             $data = TemplateFormData::select(DB::raw('`template_data`.`id` AS `id`' . $select))
-              ->leftJoin('template_forms', 'template_forms.id', '=', 'template_form_data.template_form_id')
+              ->leftJoin('template_forms AS tforms', 'tforms.id', '=', 'template_form_data.template_form_id')
               ->leftJoin('template_data', 'template_data.id', '=', 'template_form_data.template_data_id')
               ->where('template_data.template_id', $id)
               ->where('template_form_data.value', 'LIKE', '%' . request('value') . '%')
@@ -103,11 +113,6 @@ class DocumentController extends Controller
             $plucked = $data->pluck('id');
             $query->whereIn('template_data.id', $plucked);
           }
-        })
-        ->editColumn('doc', function ($row) {
-          return '
-          <a href=' . asset("/template/$row->file") . '><i class="fas fa-2x fa-file-word"></i></a>
-          ';
         })
         ->addColumn('action', function ($row) use ($id) {
           return '
@@ -124,7 +129,7 @@ class DocumentController extends Controller
           ';
         })
         ->addIndexColumn()
-        ->rawColumns(['doc', 'action'])
+        ->rawColumns(['action'])
         ->make(true);
     }
     return view('backend.documents.show', compact('config', 'page_breadcrumbs', 'datatable', 'data', 'id'));
@@ -211,6 +216,11 @@ class DocumentController extends Controller
             }
           endif;
         } elseif (in_array($itemParent->tag, ['table', 'block'])) {
+          TemplateFormData::create([
+            'template_data_id' => $templateData->id,
+            'template_form_id' => $itemParent->id,
+            'value' => NULL
+          ]);
           foreach ($itemParent->children as $itemChild):
             $childrenForm = $request[$itemParent->name] ? array_values($request[$itemParent->name]) : array();
             foreach ($childrenForm as $item):
@@ -257,7 +267,7 @@ class DocumentController extends Controller
       ]);
     } catch (\Throwable $throw) {
       DB::rollBack();
-      $response = $throw;
+//      $response = $throw;
       $response = response()->json([
         'status' => 'error',
         'message' => 'Gagal menyimpan data'
@@ -355,10 +365,16 @@ class DocumentController extends Controller
             }
           endif;
         } elseif (in_array($itemParent->tag, ['table', 'block'])) {
+          TemplateFormData::updateOrCreate([
+            'template_data_id' => $templateData->id,
+            'template_form_id' => $itemParent->id,
+          ], [
+            'value' => NULL
+          ]);
           foreach ($itemParent->children as $itemChild):
             $childrenForm = array_values($request[$itemParent->name]);
             $templateFormData = TemplateFormData::where('template_data_id', $templateData->id)->where('template_form_id', $itemChild->id);
-            foreach($templateFormData->get() as $itemPhoto):
+            foreach ($templateFormData->get() as $itemPhoto):
               Fileupload::deleteTemplateImage($itemPhoto->value);
             endforeach;
             $templateFormData->delete();
@@ -532,7 +548,7 @@ class DocumentController extends Controller
           </div>
           <div class="col-md-6">
             <div id="croppie' . $name . '">
-                 ' . ($imgUrl ? '<img src="' . $imgUrl . '" width="400px" height="200px">' : NULL) . ';
+                 ' . ($imgUrl ? '<img src="' . $imgUrl . '" width="400px" height="200px">' : NULL) . '
             </div>
             <input type="hidden" name="' . $name . '">
           </div>';
@@ -788,12 +804,12 @@ class DocumentController extends Controller
             $html = (isset($query[$index]->value) ? $query[$index]->value : NULL) . '<input type="text" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" value="' . (isset($query[$index]->value) ? $query[$index]->value : NULL) . '" style="width: 200px"/>';
             $jshtml = '<input type="text" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" class="form-control datetimepicker" placeholder="Input ' . $label . '" />';
           } elseif ($item->type == 'image') {
-            $publicPath =  public_path('template_image');
+            $publicPath = public_path('template_image');
             $imgUrl = NULL;
-            if(isset($query[$index]->value)){
-              try{
-                $imgUrl = (isset($query[$index]->value) ? "data:image/png;base64,".base64_encode(file_get_contents($publicPath.'\\'.$query[$index]->value)): NULL);
-              }catch(\Exception $exception){
+            if (isset($query[$index]->value)) {
+              try {
+                $imgUrl = (isset($query[$index]->value) ? "data:image/png;base64," . base64_encode(file_get_contents($publicPath . '\\' . $query[$index]->value)) : NULL);
+              } catch (\Exception $exception) {
 
               }
             }
@@ -804,7 +820,7 @@ class DocumentController extends Controller
               <div class="croppie_image" id="croppie' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '">
                  ' . ($imgUrl ? '<img src="' . $imgUrl . '" width="200px" height="100px">' : NULL) . '
                 </div>
-              <input type="hidden" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" value="'.($imgUrl ?? NULL).'">
+              <input type="hidden" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . '" value="' . ($imgUrl ?? NULL) . '">
             </div>';
             $jshtml = '<div class="form-group"><input type="file" class="form-control ' . $item->name . '" id="' . sprintf("%s", "'+ nextindex +'") . '" accept=".jpg,.png,.jpeg"><div class="croppie_image" id="croppie' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '"></div><input type="hidden" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '"></div>';
             $initjs .= "initcroppie$item->name();";

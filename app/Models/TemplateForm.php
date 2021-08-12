@@ -23,6 +23,7 @@ class TemplateForm extends Model
     'multiple',
     'sort_order',
     'is_column_table',
+    'is_file_name',
   ];
 
   protected $hidden = [

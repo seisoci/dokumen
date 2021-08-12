@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Template;
+use App\Models\TemplateData;
+use App\Models\User;
 
 class DashboardController extends Controller
 {
@@ -13,7 +16,9 @@ class DashboardController extends Controller
       $page_breadcrumbs = [
         ['page' => '/dashboard', 'title' => "Dashboard"],
       ];
-      $data = NULL;
-      return view('backend.dashboard.index', compact('config', 'page_breadcrumbs', 'data'));
+      $totalUser = User::count();
+      $totalTemplate = Template::count();
+      $totalData = TemplateData::count();
+      return view('backend.dashboard.index', compact('config', 'page_breadcrumbs', 'totalUser', 'totalTemplate', 'totalData'));
     }
 }

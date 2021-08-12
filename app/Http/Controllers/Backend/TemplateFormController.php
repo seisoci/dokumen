@@ -31,6 +31,15 @@ class TemplateFormController extends Controller
         $items['text'] = $request->input('formoption.text');
         $items['selected'] = $request->input('formoption.selected');
 
+        $existIsFileName = TemplateForm::where('template_id', $request['template_id'])->where('is_file_name', '1')->exists();
+        if($existIsFileName && ($request['is_file_name'] == 1)){
+          return response()->json([
+            'status' => 'error',
+            'message' => 'Pastikan hanya 1 field sebagai Nama File',
+          ]);
+          DB::rollBack();
+        }
+
         if ($request->input('parent_id')) {
           $max = TemplateForm::where('template_id', $request->input('template_id'))
             ->where('parent_id', $request->input('parent_id'))
@@ -41,6 +50,7 @@ class TemplateFormController extends Controller
             ->max('sort_order');
         }
         $multiple = 0;
+
         if($request->input('tag') == 'checkbox'){
           $multiple = $request->input('multiple');
         }elseif(in_array($request->input('tag'), ['ul', 'ol'])){
@@ -57,6 +67,7 @@ class TemplateFormController extends Controller
           'multiple' => $multiple,
           'sort_order' => $max += 1,
           'is_column_table' => $request->input('is_column_table') ?? '0',
+          'is_file_name' => $request->input('is_file_name') ?? '0',
         ]);
 
         $type = ['select', 'checkbox', 'radio'];
@@ -107,6 +118,20 @@ class TemplateFormController extends Controller
         $items['text'] = $request->input('formoption.text');
         $items['selected'] = $request->input('formoption.selected');
 
+        $existIsFileName = TemplateForm::where([
+          ['template_id', '=', $request['template_id']],
+          ['is_file_name', '=','1'],
+          ['id', '!=', $request['id']]
+        ])->exists();
+
+        if($existIsFileName && ($request['is_file_name'] == 1)){
+          return response()->json([
+            'status' => 'error',
+            'message' => 'Pastikan hanya 1 field sebagai Nama File',
+          ]);
+          DB::rollBack();
+        }
+
         $data = TemplateForm::findOrFail($request->input('id'));
         $multiple = 0;
         if ($request->input('tag') == 'checkbox') {
@@ -123,6 +148,7 @@ class TemplateFormController extends Controller
           'label' => $request->input('label'),
           'multiple' => $multiple,
           'is_column_table' => $request->input('is_column_table') ?? '0',
+          'is_file_name' => $request->input('is_file_name') ?? '0'
         ]);
 
         $type = ['select', 'checkbox', 'radio'];
