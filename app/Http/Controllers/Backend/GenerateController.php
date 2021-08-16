@@ -53,7 +53,7 @@ class GenerateController extends Controller
       $this->single($item);
     endforeach;
 
-    $fileName = $templateName.'_'.($templateFormName->valuesingle->value ?? '').'_'.Carbon::today()->toDateString().'.'.end($ext);
+    $fileName = $templateName.'_'.($templateFormName->valuesingle->value ?? $templateFormName->id).'_'.Carbon::today()->toDateString().'.'.end($ext);
     header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
     header('Content-Type: application/octet-stream');
     header("Content-Disposition: attachment; filename=$fileName");
@@ -116,7 +116,7 @@ class GenerateController extends Controller
         $this->single($itemForm);
       endforeach;
 
-      $fileName = $templateName.'_'.$templateFormName->valuesingle->value.'_'.Carbon::today()->toDateString().'.'.end($ext);
+      $fileName = $templateName.'_'.($templateFormName->valuesingle->value ?? $templateFormName->id).'_'.Carbon::today()->toDateString().'.'.end($ext);
       $this->templateProcessor->saveAs($saveto . '/' . $fileName);
     }
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($saveto));
