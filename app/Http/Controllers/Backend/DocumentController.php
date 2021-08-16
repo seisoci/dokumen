@@ -240,7 +240,6 @@ class DocumentController extends Controller
                   ]);
                 }
               elseif (in_array($itemChild->tag, ['checkbox', 'ul', 'ol'])):
-
                 if (!$itemChild->multiple) {
                   TemplateFormData::create([
                     'template_data_id' => $templateData->id,
@@ -901,7 +900,7 @@ class DocumentController extends Controller
                 }
               }
             } else {
-              if ($itemCheckbox['option_value']) {
+              if ($itemCheckbox['option_selected']) {
                 $checkboxStatus = 'checked';
               }
             }
@@ -912,7 +911,7 @@ class DocumentController extends Controller
           ';
             $optionjs .= '
             <label class="checkbox">
-                <input type="checkbox" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . ($itemCheckbox->option_selected ? 'checked' : NULL) . '/>  ' . $itemCheckbox->option_text . '
+                <input type="checkbox" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . $checkboxStatus . '/>  ' . $itemCheckbox->option_text . '
            </label>
           ';
           endforeach;
@@ -931,7 +930,7 @@ class DocumentController extends Controller
                 $checkboxStatus = NULL;
               }
             } else {
-              if ($itemRadio['option_value']) {
+              if ($itemRadio['option_selected']) {
                 $checkboxStatus = 'checked';
               }
             }
@@ -943,7 +942,7 @@ class DocumentController extends Controller
             ';
             $optionjs .= '
               <label class="radio">
-                <input type="radio" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" ' . ($itemRadio->option_selected ? 'checked' : NULL) . '/>
+                <input type="radio" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" value="' . $itemRadio->option_value . '" ' . $checkboxStatus . '/>
                 <span></span> ' . $itemRadio->option_text . '
              </label>
             ';
