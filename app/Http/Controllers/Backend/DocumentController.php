@@ -909,11 +909,19 @@ class DocumentController extends Controller
                 <input type="checkbox" name="' . $name . '[' . $i . ']' . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . $checkboxStatus . '/>  ' . $itemCheckbox->option_text . '
            </label>
           ';
-            $optionjs .= '
-            <label class="checkbox">
-                <input type="checkbox" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . $checkboxStatus . '/>  ' . $itemCheckbox->option_text . '
-           </label>
-          ';
+            if ($edit) {
+              $optionjs .= '
+                <label class="checkbox">
+                    <input type="checkbox" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . ($itemCheckbox['option_selected'] ? 'checked' : NULL) . '/>  ' . $itemCheckbox->option_text . '
+               </label>
+              ';
+            } else {
+              $optionjs .= '
+                <label class="checkbox">
+                    <input type="checkbox" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . ($item->multiple ? "[]" : NULL) . '" value="' . $itemCheckbox->option_value . '" ' . $checkboxStatus . '/>  ' . $itemCheckbox->option_text . '
+               </label>
+              ';
+            }
           endforeach;
           $html = '<div class="checkbox-list" style="width: 150px">' . $option . '</div>';
           $jshtml = '<div class="checkbox-list">' . $optionjs . '</div>';
@@ -940,12 +948,21 @@ class DocumentController extends Controller
                 <span></span> ' . $itemRadio->option_text . '
              </label>
             ';
-            $optionjs .= '
-              <label class="radio">
-                <input type="radio" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" value="' . $itemRadio->option_value . '" ' . $checkboxStatus . '/>
-                <span></span> ' . $itemRadio->option_text . '
-             </label>
-            ';
+            if ($edit) {
+              $optionjs .= '
+                <label class="radio">
+                  <input type="radio" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" value="' . $itemRadio->option_value . '" ' . ($itemRadio['option_selected'] ? 'checked' : NULL) . '/>
+                  <span></span> ' . $itemRadio->option_text . '
+               </label>
+              ';
+            } else {
+              $optionjs .= '
+                <label class="radio">
+                  <input type="radio" name="' . $name . sprintf("%s", "['+ nextindex +']") . '[' . $item->name . ']' . '" value="' . $itemRadio->option_value . '" ' . $checkboxStatus . '/>
+                  <span></span> ' . $itemRadio->option_text . '
+               </label>
+              ';
+            }
           endforeach;
           $html = '<div class="radio-list">' . $option . '</div>';
           $jshtml = '<div class="radio-list">' . $optionjs . '</div>';
