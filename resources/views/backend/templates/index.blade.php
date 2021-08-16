@@ -77,7 +77,7 @@
               <label class="col-3 col-form-label">File:</label>
               <div class="col-9">
                 <div class="custom-file">
-                  <input type="file" class="custom-file-input" name="file" accept=".doc,.docx"/>
+                  <input type="file" class="custom-file-input" name="file" accept=".docx"/>
                   <label class="custom-file-label" for="File">Choose file</label>
                 </div>
               </div>
@@ -121,7 +121,7 @@
               <label class="col-3 col-form-label">File:</label>
               <div class="col-9">
                 <div class="custom-file">
-                  <input type="file" class="custom-file-input" name="file" accept=".doc,.docx"/>
+                  <input type="file" class="custom-file-input" name="file" accept=".docx"/>
                   <label class="custom-file-label" for="File">Choose file</label>
                 </div>
               </div>

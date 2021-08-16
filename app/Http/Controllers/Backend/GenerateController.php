@@ -53,7 +53,7 @@ class GenerateController extends Controller
       $this->single($item);
     endforeach;
 
-    $fileName = $templateName.'_'.($templateFormName->valuesingle->value ?? $templateFormName->id).'_'.Carbon::today()->toDateString().'.'.end($ext);
+    $fileName = $templateName . '_' . ($templateFormName->valuesingle->value ?? $templateFormName->id) . '_' . Carbon::today()->toDateString() . '.' . end($ext);
     header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
     header('Content-Type: application/octet-stream');
     header("Content-Disposition: attachment; filename=$fileName");
@@ -66,7 +66,7 @@ class GenerateController extends Controller
   public function generatemulti(Request $request)
   {
     $data = json_decode($request->data) ?? array();
-    if(count($data) <= 0){
+    if (count($data) <= 0) {
       return response()->json([
         'status' => 'error',
         'message' => 'Tidak ada data yang dipilih',
@@ -80,7 +80,7 @@ class GenerateController extends Controller
     if (!File::isDirectory("$saveto")) {
       File::makeDirectory("$saveto", 0755, true);
     }
-    $zip_file = $filePath . '/batch'.$batchName->template->name.'.zip';
+    $zip_file = $filePath . '/batch' . $batchName->template->name . '.zip';
     $zip = new ZipArchive();
     $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
     foreach ($data as $item) {
@@ -116,7 +116,7 @@ class GenerateController extends Controller
         $this->single($itemForm);
       endforeach;
 
-      $fileName = $templateName.'_'.($templateFormName->valuesingle->value ?? $templateFormName->id).'_'.Carbon::today()->toDateString().'.'.end($ext);
+      $fileName = $templateName . '_' . ($templateFormName->valuesingle->value ?? $templateFormName->id) . '_' . Carbon::today()->toDateString() . '.' . end($ext);
       $this->templateProcessor->saveAs($saveto . '/' . $fileName);
     }
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($saveto));
@@ -147,7 +147,12 @@ class GenerateController extends Controller
           list($width, $height) = getimagesize($imgPath . '/' . $data['valuesingle']['value']);
           $templateProcessor = $this->templateProcessor->setImageValue($data['name'], array('path' => $imgPath . '/' . $data['valuesingle']['value'], 'width' => $width, 'height' => $height));
         }
+      } elseif ($data['tag'] == 'textarea') {
+        $strReplace = str_replace("\n", "</w:t><w:br/><w:t>", ($data['valuesingle']['value'] ?? NULL));
+        $text->addText($strReplace);
+        $templateProcessor = $this->templateProcessor->setComplexValue($data['name'], $text);
       } else {
+
         $templateProcessor = $this->templateProcessor->setValue($data['name'], $data['valuesingle']['value'] ?? NULL);
       }
     } elseif ($data['tag'] == 'checkbox') {
@@ -242,7 +247,7 @@ class GenerateController extends Controller
           foreach ($item['valuemulti'] as $key => $valmulti):
             $array[$key][$item['name']] = isset($valmulti['value']) ? number_format($valmulti['value'], 2, '.', ',') : NULL;
           endforeach;
-        }else{
+        } else {
           foreach ($item['valuemulti'] as $key => $valmulti):
             $array[$key][$item['name']] = $valmulti['value'] ?? NULL;
           endforeach;

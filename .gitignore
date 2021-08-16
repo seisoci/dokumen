@@ -3,6 +3,7 @@
 /public/js
 /public/media
 /public/plugins
+/public/template_temp
 /storage/*.key
 /vendor
 .env

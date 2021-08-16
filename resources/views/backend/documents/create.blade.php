@@ -71,11 +71,13 @@
         });
 
         $('.date').datepicker({
-          format: 'yyyy-mm-dd',
+          format: 'dd M yyyy',
           todayHighlight: !0,
         });
 
-        $('.datetimepicker').datetimepicker();
+        $('.datetimepicker').datetimepicker({
+          format: 'DD MMM YYYY HH:mm:ss'
+        });
 
         $('.time').timepicker();
       }
