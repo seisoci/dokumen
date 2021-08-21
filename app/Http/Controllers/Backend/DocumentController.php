@@ -329,7 +329,9 @@ class DocumentController extends Controller
             if ($itemParent->type == 'image') {
               $fileName = $request->input($itemParent->name) ? Fileupload::uploadImagePublic($request->input($itemParent->name), NULL, NULL, NULL, NULL, "base64") : NULL;
               $deletedData = TemplateFormData::where('template_data_id', $templateData->id)->where('template_form_id', $itemParent->id)->first();
-              Fileupload::deleteTemplateImage($deletedData->value);
+              if($deletedData){
+                Fileupload::deleteTemplateImage($deletedData->value);
+              }
               if ($fileName) {
                 TemplateFormData::updateOrCreate([
                   'template_data_id' => $templateData->id,
@@ -420,11 +422,11 @@ class DocumentController extends Controller
       ]);
     } catch (\Throwable $throw) {
       DB::rollBack();
-//      $response = $throw;
-      $response = response()->json([
-        'status' => 'error',
-        'message' => 'Gagal menyimpan data'
-      ]);
+      $response = $throw;
+//      $response = response()->json([
+//        'status' => 'error',
+//        'message' => 'Gagal menyimpan data'
+//      ]);
     }
     return $response;
   }
