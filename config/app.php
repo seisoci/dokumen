@@ -168,7 +168,6 @@ return [
     App\Providers\MetronicServiceProvider::class,
     App\Providers\FileuploadProvider::class,
     Yajra\DataTables\DataTablesServiceProvider::class,
-    Yajra\DataTables\ButtonsServiceProvider::class,
     Spatie\Permission\PermissionServiceProvider::class,
     Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class,
 
@@ -239,7 +238,7 @@ return [
     'Metronic' => App\Classes\Theme\Metronic::class,
     'Menu' => App\Classes\Theme\Menu::class,
     'Fileupload' => App\Facades\Fileupload::class,
-
+    'Image' => Intervention\Image\Facades\Image::class,
   ],
 
 ];

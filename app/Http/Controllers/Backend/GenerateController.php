@@ -45,8 +45,8 @@ class GenerateController extends Controller
       ->orderBy('sort_order', 'asc')
       ->first();
 
-    $filePath = 'template';
-    $file = asset($filePath . '/' . $templateData->template->file);
+    $filePath = 'template/' . $templateData->template->file;
+    $file = public_path($filePath);
     $this->templateProcessor = new TemplateProcessor($file);
 
     foreach ($templateForm as $item):
@@ -108,9 +108,8 @@ class GenerateController extends Controller
         ->orderBy('sort_order', 'asc')
         ->first();
 
-      $filePathSingle = 'template';
-      $file = asset($filePathSingle . '/' . $templateData->template->file);
-      $this->templateProcessor = new TemplateProcessor($file);
+      $filePath = 'template/' . $templateData->template->file;
+      $file = public_path($filePath);
 
       foreach ($templateForm as $itemForm):
         $this->single($itemForm);

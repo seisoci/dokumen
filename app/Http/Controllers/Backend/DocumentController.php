@@ -309,6 +309,7 @@ class DocumentController extends Controller
         $renderJs .= $render['js'] ?? NULL;
       }
     endforeach;
+
     return view('backend.documents.edit', compact('config', 'page_breadcrumbs', 'templateDataId', 'renderHtml', 'renderJs'));
   }
 
@@ -325,7 +326,7 @@ class DocumentController extends Controller
       $templateData = TemplateData::findOrFail($templateDataId);
       foreach ($templateForm as $itemParent):
         if (!in_array($itemParent->tag, ['table', 'block'])) {
-          if ($request->input($itemParent->name) && !in_array($itemParent->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
+          if (isset($itemParent->name) && !in_array($itemParent->tag, ['checkbox', 'ul', 'ol', 'block', 'table'])):
             if ($itemParent->type == 'image') {
               $fileName = $request->input($itemParent->name) ? Fileupload::uploadImagePublic($request->input($itemParent->name), NULL, NULL, NULL, NULL, "base64") : NULL;
               $deletedData = TemplateFormData::where('template_data_id', $templateData->id)->where('template_form_id', $itemParent->id)->first();
